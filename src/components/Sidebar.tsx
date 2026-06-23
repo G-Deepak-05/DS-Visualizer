@@ -221,9 +221,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <div style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              gap: '8px'
             }}>
+              <a 
+                href="https://forms.gle/HxjAHSDfFK6KjPY4A"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: '12px',
+                  color: 'var(--accent-pink)',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  border: '2px solid var(--text-primary)',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  background: 'var(--bg-secondary)',
+                  boxShadow: '2px 2px 0px var(--text-primary)',
+                  transition: 'var(--transition-smooth)',
+                  cursor: 'pointer'
+                }}
+              >
+                Share Feedback
+              </a>
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Developed for Placements © 2026</p>
             </div>
           </div>

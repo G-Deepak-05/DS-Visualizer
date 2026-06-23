@@ -118,7 +118,6 @@ function App() {
               if (activeTab === 'dashboard' || activeTab === 'interview') {
                 handleSwitchTab('array');
               }
-              setIsDrawerOpen(true);
             }}
           >
             Playground
@@ -129,6 +128,14 @@ function App() {
           >
             Interview Mode
           </span>
+          <a 
+            href="https://forms.gle/HxjAHSDfFK6KjPY4A"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="header-nav-link"
+          >
+            Feedback
+          </a>
         </nav>
         <button className="menu-toggle-btn" onClick={() => setIsDrawerOpen(true)}>
           <span className="menu-bar"></span>
