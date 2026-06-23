@@ -1,13 +1,12 @@
 /* DS Visualizer: Premium Custom Design System */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
   --bg-primary: #9eb3a6;       /* Sage Green background */
   --bg-secondary: #f4f6f4;     /* Crisp soft light-green/cream secondary */
   --bg-tertiary: #e2e8e4;      /* Soft olive border/card bg */
-  --text-primary: #2c3330;     /* Rich charcoal */
-  --text-secondary: #4a5550;   /* Muted charcoal */
-  --text-muted: #74837a;       /* Olive grey */
+  --text-primary: #1c211e;     /* Darker charcoal for maximum contrast (>7:1) */
+  --text-secondary: #323a36;   /* Darker muted charcoal (>4.5:1 ratio on background) */
+  --text-muted: #4e5a53;       /* High-contrast grey-olive (>4.5:1 on cream) */
   
   --accent-pink: #d91b5c;      /* Hot pink accent dot and active links */
   --accent-cyan: #2c3330;      /* Minimalist dark cyan */
@@ -459,6 +458,49 @@ body {
   margin-top: 24px;
 }
 
+.dashboard-main-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+
+.dashboard-topics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.xp-progress-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Difficulty Badges with High Contrast for Accessibility */
+.diff-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+  line-height: 1;
+}
+
+.diff-badge.easy {
+  background: rgba(32, 92, 59, 0.1) !important;
+  color: #1e5939 !important; /* Meets WCAG AA contrast ratio */
+}
+
+.diff-badge.medium {
+  background: rgba(133, 82, 4, 0.1) !important;
+  color: #855204 !important; /* Meets WCAG AA contrast ratio */
+}
+
+.diff-badge.hard {
+  background: rgba(166, 15, 66, 0.1) !important;
+  color: #a60f42 !important; /* Meets WCAG AA contrast ratio */
+}
+
 /* Code Editor */
 .code-editor-panel {
   display: grid;
@@ -844,3 +886,106 @@ body {
     width: 30%;
   }
 }
+
+/* Media Queries for Responsiveness and Performance Optimization */
+@media (max-width: 1024px) {
+  /* Disable CPU-taxing SVG noise filters on mobile/tablet viewports */
+  body,
+  .drawer-panel,
+  .loader-container {
+    background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.15), transparent) !important;
+  }
+
+  /* Stack visualizer layouts vertically */
+  .visualizer-layout {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+  }
+
+  /* Stack dashboard main layout (Core Topics + Recent Logs) vertically */
+  .dashboard-main-layout {
+    grid-template-columns: 1fr !important;
+    gap: 24px;
+  }
+
+  /* Prevent drawer panel from overflow on small viewports */
+  .drawer-panel {
+    width: 100% !important;
+    max-width: 360px !important;
+  }
+
+  /* Override fixed-width elements like tab-groups */
+  .tab-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-wrap: wrap !important;
+    height: auto !important;
+  }
+  
+  .tab-btn {
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Hide desktop horizontal links since menu drawer is available */
+  .header-nav {
+    display: none !important;
+  }
+
+  /* Reduce layout paddings */
+  .app-header {
+    padding: 0 16px !important;
+  }
+
+  .main-content {
+    padding: 16px !important;
+  }
+
+  /* Stack complexity grid columns */
+  .complexity-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  /* Stack dashboard topic card grid on mobile */
+  .dashboard-topics-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Ensure canvases and code scroll horizontally instead of overflowing */
+  .visualizer-canvas-container {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    justify-content: flex-start !important; /* Allow scroll content to align properly */
+    padding: 16px !important;
+  }
+
+  .code-body {
+    font-size: 12px !important;
+    padding: 12px !important;
+  }
+
+  /* Adjust control button spacings on mobile */
+  .control-btn {
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+  }
+
+  /* Adjust logo size slightly */
+  .logo {
+    font-size: 18px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Stack XP progress wheel card elements on very narrow screens */
+  .xp-progress-card {
+    flex-direction: column !important;
+    text-align: center;
+    gap: 16px !important;
+  }
+}
+

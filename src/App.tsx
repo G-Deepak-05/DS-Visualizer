@@ -137,7 +137,7 @@ function App() {
             Feedback
           </a>
         </nav>
-        <button className="menu-toggle-btn" onClick={() => setIsDrawerOpen(true)}>
+        <button className="menu-toggle-btn" onClick={() => setIsDrawerOpen(true)} aria-label="Toggle Navigation Menu">
           <span className="menu-bar"></span>
           <span className="menu-bar"></span>
           <span className="menu-bar"></span>
