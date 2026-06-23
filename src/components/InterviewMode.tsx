@@ -181,13 +181,9 @@ export const InterviewMode: React.FC<InterviewModeProps> = ({ onAddXP }) => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600 }}>{chall.title}</span>
-                <span style={{
-                  fontSize: '8px',
-                  padding: '1px 5px',
-                  borderRadius: '3px',
-                  background: chall.difficulty === 'Easy' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
-                  color: chall.difficulty === 'Easy' ? 'var(--accent-emerald)' : 'var(--accent-amber)'
-                }}>{chall.difficulty}</span>
+                <span className={`diff-badge ${chall.difficulty.toLowerCase()}`} style={{ fontSize: '8px', padding: '1px 5px', borderRadius: '3px' }}>
+                  {chall.difficulty}
+                </span>
               </div>
               <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Reward: {chall.xpReward} XP</p>
             </div>

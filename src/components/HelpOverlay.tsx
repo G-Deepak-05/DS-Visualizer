@@ -87,6 +87,7 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ annotations, onClose, 
                 fontSize: '10px',
                 pointerEvents: 'auto',
               }}
+              aria-label="Delete annotation"
             >
               ✕
             </button>

@@ -155,7 +155,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
       {/* Gamification Row */}
       <div className="dashboard-grid" style={{ marginBottom: '32px' }}>
         {/* XP Wheel Card */}
-        <div className="glass-panel" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+        <div className="glass-panel xp-progress-card">
           <div className="xp-circle" style={{ '--progress': `${progressPercent}%` } as any}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '24px', fontWeight: 700 }}>{stats.level}</div>
@@ -190,8 +190,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    opacity: isUnlocked ? 1 : 0.25,
-                    filter: isUnlocked ? 'none' : 'grayscale(100%)',
                     transition: 'var(--transition-smooth)'
                   }}
                   title={`${badge.title}: ${badge.description}`}
@@ -206,10 +204,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginBottom: '6px',
+                    opacity: isUnlocked ? 1 : 0.25,
+                    filter: isUnlocked ? 'none' : 'grayscale(100%)'
                   }}>
                     <Trophy size={20} style={{ color: badge.color }} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 600, textAlign: 'center', color: 'var(--text-primary)' }}>
+                  <span style={{ 
+                    fontSize: '10px', 
+                    fontWeight: 600, 
+                    textAlign: 'center', 
+                    color: 'var(--text-primary)',
+                    opacity: isUnlocked ? 1 : 0.8
+                  }}>
                     {badge.title.split(' ')[0]}
                   </span>
                 </div>
@@ -220,7 +226,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
       </div>
 
       {/* Main Sections Split */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+      <div className="dashboard-main-layout">
         {/* Core Topics List */}
         <div>
           <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>
@@ -286,7 +292,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
               />
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="dashboard-topics-grid">
               {topics.map((t) => {
                 const topicLocked = isTabLocked(t.tab, stats, !!questMode);
                 return (
@@ -316,14 +322,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
                           {t.title}
                           {topicLocked && <Lock size={12} style={{ color: 'var(--text-muted)' }} />}
                         </h4>
-                        <span style={{
-                          fontSize: '9px',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          background: t.level === 'Easy' ? 'rgba(16, 185, 129, 0.15)' : t.level === 'Medium' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                          color: t.level === 'Easy' ? 'var(--accent-emerald)' : t.level === 'Medium' ? 'var(--accent-amber)' : 'var(--accent-rose)',
-                          fontWeight: 600
-                        }}>{t.level}</span>
+                        <span className={`diff-badge ${t.level.toLowerCase()}`}>{t.level}</span>
                       </div>
                       <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{t.desc}</p>
                     </div>

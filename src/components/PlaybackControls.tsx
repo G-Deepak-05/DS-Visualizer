@@ -100,6 +100,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
             }} 
             disabled={currentStep === 0}
             title="Previous Step"
+            aria-label="Previous step"
           >
             <ChevronLeft size={18} />
           </button>
@@ -111,6 +112,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
             }}
             disabled={totalSteps <= 1}
             title={isPlaying ? "Pause" : "Play Animation"}
+            aria-label={isPlaying ? "Pause animation" : "Play animation"}
           >
             {isPlaying ? <Pause size={18} /> : <Play size={18} />}
           </button>
@@ -123,6 +125,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
             }} 
             disabled={currentStep >= totalSteps - 1}
             title="Next Step"
+            aria-label="Next step"
           >
             <ChevronRight size={18} />
           </button>
@@ -134,6 +137,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
               onReset();
             }}
             title="Reset to Start"
+            aria-label="Reset animation"
           >
             <RotateCcw size={18} />
           </button>
@@ -204,6 +208,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
               transition: 'all 0.2s ease',
             }}
             title={isSpeaking ? "Stop Listening" : "Listen (Text to Speech)"}
+            aria-label={isSpeaking ? "Stop Voice Narration" : "Listen to Voice Narration"}
           >
             {isSpeaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
