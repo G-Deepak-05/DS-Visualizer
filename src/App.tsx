@@ -102,9 +102,9 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="logo" onClick={() => handleSwitchTab('dashboard')}>
+        <h1 className="logo" onClick={() => handleSwitchTab('dashboard')}>
           DS Visualizer<span className="logo-dot">.</span>
-        </div>
+        </h1>
         <nav className="header-nav">
           <span 
             className={`header-nav-link ${activeTab === 'dashboard' ? 'active' : ''}`}
