@@ -2,9 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { PlaybackControls } from '../PlaybackControls';
 import { ComplexityTable } from '../ComplexityTable';
 import { CodeExecutor } from '../CodeExecutor';
-import type { VisualizerStep } from '../../types';
+import type { VisualizerStep, Annotation } from '../../types';
+import { loadAnnotations, saveAnnotations } from '../../utils/annotations';
+import { HelpOverlay } from '../HelpOverlay';
+
+import { getAnalogy } from '../../utils/analogies';
 
 interface TreeVisualizerProps {
+  languageMode: 'technical' | 'analogy';
   onAddXP: (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz') => void;
 }
 
@@ -15,7 +20,7 @@ interface TreeNode {
   height: number;
 }
 
-export const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ onAddXP }) => {
+export const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ languageMode, onAddXP }) => {
   const [treeType, setTreeType] = useState<'bst' | 'avl'>('bst');
   const [root, setRoot] = useState<TreeNode | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -25,6 +30,15 @@ export const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ onAddXP }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(900);
+  // Help overlay state
+  const [showHelp, setShowHelp] = useState(false);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+
+  // Load persisted annotations for this visualizer
+  useEffect(() => {
+    const saved = loadAnnotations('tree');
+    setAnnotations(saved);
+  }, []);
 
   const currentStep = steps[currentStepIndex] || {
     state: { tree: root, activeNodeVal: -1, successNodeVal: -1, rotationType: null },
@@ -392,6 +406,10 @@ export const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ onAddXP }) => {
     }
   };
 
+  const currentExplanation = languageMode === 'analogy' 
+    ? getAnalogy('tree', currentStep.explanation) 
+    : currentStep.explanation;
+
   return (
     <div className="visualizer-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
       <div>
@@ -405,58 +423,96 @@ export const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ onAddXP }) => {
               </div>
             </div>
 
-            {/* Tree Canvas */}
-            <div className="visualizer-canvas-container" style={{ minHeight: '300px', display: 'block', position: 'relative' }}>
-              <svg style={{ width: '100%', height: '100%', minHeight: '280px' }}>
-                {/* Draw connection lines */}
+            {/* Tree Canvas Container */}
+            <div className="visualizer-canvas-container" style={{ display: 'flex', flexDirection: 'column', padding: '0', alignItems: 'stretch', minHeight: '300px' }}>
+              
+              {/* Canvas Header / Speedometer & Invariant Counters */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)'
+              }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span>Active: <strong style={{ color: 'var(--accent-amber)' }}>{currentStep.state.activeNodeVal !== -1 ? currentStep.state.activeNodeVal : 'None'}</strong></span>
+                  <span>Tree Nodes: <strong style={{ color: 'var(--accent-cyan)' }}>{layoutNodes.length}</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Balance/Depth:</span>
+                  <div style={{
+                    width: '60px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${layoutNodes.length > 0 ? Math.min(100, (Math.log2(layoutNodes.length + 1) / 4) * 100) : 0}%`,
+                      height: '100%',
+                      background: 'var(--accent-cyan)',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Canvas Area */}
+              <div style={{ flex: 1, position: 'relative', width: '100%', minHeight: '280px' }}>
+                <svg style={{ width: '100%', height: '100%', minHeight: '280px', position: 'absolute', top: 0, left: 0 }}>
+                  {/* Draw connection lines */}
+                  {layoutNodes.map((node) => {
+                    if (node.parentX === null || node.parentY === null) return null;
+                    return (
+                      <line
+                        key={`line-${node.val}`}
+                        x1={node.parentX}
+                        y1={node.parentY}
+                        x2={node.x}
+                        y2={node.y}
+                        style={{ stroke: 'rgba(255, 255, 255, 0.12)', strokeWidth: 2 }}
+                      />
+                    );
+                  })}
+                </svg>
+
+                {/* Render Nodes as absolute divs */}
                 {layoutNodes.map((node) => {
-                  if (node.parentX === null || node.parentY === null) return null;
+                  const isActive = currentStep.state.activeNodeVal === node.val;
+                  const isSuccess = currentStep.state.successNodeVal === node.val;
+
+                  let nodeClass = "ds-node";
+                  if (isActive) nodeClass += " active";
+                  if (isSuccess) nodeClass += " success";
+
                   return (
-                    <line
-                      key={`line-${node.val}`}
-                      x1={node.parentX}
-                      y1={node.parentY}
-                      x2={node.x}
-                      y2={node.y}
-                      style={{ stroke: 'rgba(255, 255, 255, 0.12)', strokeWidth: 2 }}
-                    />
+                    <div
+                      key={`node-${node.val}`}
+                      className={nodeClass}
+                      style={{
+                        position: 'absolute',
+                        left: `${node.x - 22}px`,
+                        top: `${node.y - 22}px`,
+                        width: '44px',
+                        height: '44px',
+                        fontSize: '13px',
+                        borderRadius: '50%'
+                      }}
+                    >
+                      {node.val}
+                    </div>
                   );
                 })}
-              </svg>
 
-              {/* Render Nodes as absolute divs */}
-              {layoutNodes.map((node) => {
-                const isActive = currentStep.state.activeNodeVal === node.val;
-                const isSuccess = currentStep.state.successNodeVal === node.val;
-
-                let nodeClass = "ds-node";
-                if (isActive) nodeClass += " active";
-                if (isSuccess) nodeClass += " success";
-
-                return (
-                  <div
-                    key={`node-${node.val}`}
-                    className={nodeClass}
-                    style={{
-                      position: 'absolute',
-                      left: `${node.x - 22}px`,
-                      top: `${node.y - 22}px`,
-                      width: '44px',
-                      height: '44px',
-                      fontSize: '13px',
-                      borderRadius: '50%'
-                    }}
-                  >
-                    {node.val}
+                {layoutNodes.length === 0 && (
+                  <div style={{ position: 'absolute', top: '45%', left: '42%', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    Tree is Empty
                   </div>
-                );
-              })}
-
-              {layoutNodes.length === 0 && (
-                <div style={{ position: 'absolute', top: '45%', left: '42%', color: 'var(--text-muted)', fontSize: '13px' }}>
-                  Tree is Empty
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Traversal display helper */}
@@ -486,8 +542,26 @@ export const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ onAddXP }) => {
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={currentStep.explanation}
+            explanation={currentExplanation}
           />
+          {/* Help overlay toggle button */}
+          <button
+            className="control-btn"
+            style={{ marginTop: '8px' }}
+            onClick={() => setShowHelp(prev => !prev)}
+          >
+            {showHelp ? 'Close Help' : 'Help'}
+          </button>
+          {showHelp && (
+            <HelpOverlay
+              annotations={annotations}
+              onChange={newAnn => {
+                setAnnotations(newAnn);
+                saveAnnotations('tree', newAnn);
+              }}
+              onClose={() => setShowHelp(false)}
+            />
+          )}
         </div>
 
         <CodeExecutor structureType="tree" onExecuteCommands={handleExecuteCommands} />

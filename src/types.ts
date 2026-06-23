@@ -15,6 +15,7 @@ export type ActiveTab =
 export interface VisualizerStep {
   stepNumber: number;
   explanation: string;
+  analogyExplanation?: string;
   codeLine?: number;
   state: any; // visual state representation
 }
@@ -55,4 +56,13 @@ export interface Challenge {
   targetState: any;
   hint: string;
   instructions: string;
+}
+
+// Annotation for help overlay
+export interface Annotation {
+  id: string; // unique identifier
+  selector: string; // CSS selector of the element to annotate
+  text: string; // explanatory text
+  arrow?: 'top' | 'right' | 'bottom' | 'left'; // optional arrow direction
+  color?: string; // optional color for the annotation
 }

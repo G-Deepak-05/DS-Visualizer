@@ -3,12 +3,14 @@ import { PlaybackControls } from '../PlaybackControls';
 import { ComplexityTable } from '../ComplexityTable';
 import { CodeExecutor } from '../CodeExecutor';
 import type { VisualizerStep } from '../../types';
+import { getAnalogy } from '../../utils/analogies';
 
 interface HeapVisualizerProps {
+  languageMode: 'technical' | 'analogy';
   onAddXP: (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz') => void;
 }
 
-export const HeapVisualizer: React.FC<HeapVisualizerProps> = ({ onAddXP }) => {
+export const HeapVisualizer: React.FC<HeapVisualizerProps> = ({ languageMode, onAddXP }) => {
   const [heapType, setHeapType] = useState<'min' | 'max'>('min');
   const [heap, setHeap] = useState<number[]>([10, 25, 30, 45, 50]);
   const [inputValue, setInputValue] = useState('');
@@ -238,6 +240,10 @@ export const HeapVisualizer: React.FC<HeapVisualizerProps> = ({ onAddXP }) => {
   };
   const activeHeap = currentStep.state.heap;
 
+  const currentExplanation = languageMode === 'analogy' 
+    ? getAnalogy('heap', currentStep.explanation) 
+    : currentStep.explanation;
+
   // Compute Layout positions for tree nodes (indexed 0 to 6)
   interface NodeCoord {
     val: number;
@@ -253,14 +259,15 @@ export const HeapVisualizer: React.FC<HeapVisualizerProps> = ({ onAddXP }) => {
     // Coordinates for complete tree of max size 7
     const positions: { x: number; y: number; p: number | null }[] = [
       { x: 200, y: 40, p: null }, // index 0 (Root)
-      { x: 110, y: 100, p: 0 },   // index 1
-      { x: 290, y: 100, p: 0 },   // index 2
-      { x: 60, y: 160, p: 1 },    // index 3
-      { x: 160, y: 160, p: 1 },   // index 4
-      { x: 240, y: 160, p: 2 },   // index 5
-      { x: 340, y: 160, p: 2 }    // index 6
+      { x: 100, y: 90, p: 0 },    // index 1
+      { x: 300, y: 90, p: 0 },    // index 2
+      { x: 50, y: 150, p: 1 },    // index 3
+      { x: 150, y: 150, p: 1 },   // index 4
+      { x: 250, y: 150, p: 2 },   // index 5
+      { x: 350, y: 150, p: 2 }    // index 6
     ];
 
+    if (idx >= positions.length) return null;
     const pos = positions[idx];
     return { val, x: pos.x, y: pos.y, parentIdx: pos.p };
   };
@@ -276,7 +283,7 @@ export const HeapVisualizer: React.FC<HeapVisualizerProps> = ({ onAddXP }) => {
       <div>
         <div className="glass-panel" style={{ minHeight: '340px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 600 }}>Heap Visualizer (Tree & Array)</h2>
               <div className="tab-group" style={{ width: '220px' }}>
                 <button className={`tab-btn ${heapType === 'min' ? 'active' : ''}`} onClick={() => setHeapType('min')}>Min Heap</button>
@@ -284,82 +291,120 @@ export const HeapVisualizer: React.FC<HeapVisualizerProps> = ({ onAddXP }) => {
               </div>
             </div>
 
-            {/* Split layout: Left Tree, Right Array */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'center' }}>
+            {/* Split layout: Left Tree, Right Array with header stats */}
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               
-              {/* Left Heap Tree Canvas */}
-              <div className="visualizer-canvas-container" style={{ minHeight: '220px', position: 'relative', display: 'block' }}>
-                <svg style={{ width: '100%', height: '100%', minHeight: '200px' }}>
-                  {treeNodes.map((node, idx) => {
-                    if (node.parentIdx === null) return null;
-                    const pCoords = getCoordinates(node.parentIdx);
-                    if (!pCoords) return null;
-                    return (
-                      <line
-                        key={`line-${idx}`}
-                        x1={pCoords.x}
-                        y1={pCoords.y}
-                        x2={node.x}
-                        y2={node.y}
-                        style={{ stroke: 'rgba(255, 255, 255, 0.1)', strokeWidth: 2 }}
-                      />
-                    );
-                  })}
-                </svg>
-
-                {treeNodes.map((node, idx) => {
-                  const isActive = currentStep.state.active === idx;
-                  const isCompare = currentStep.state.compare === idx;
-                  const isSuccess = currentStep.state.success === idx;
-
-                  let nodeClass = "ds-node";
-                  if (isActive) nodeClass += " active";
-                  if (isCompare) nodeClass += " compare";
-                  if (isSuccess) nodeClass += " success";
-
-                  return (
-                    <div
-                      key={`node-${idx}`}
-                      className={nodeClass}
-                      style={{
-                        position: 'absolute',
-                        left: `${node.x - 20}px`,
-                        top: `${node.y - 20}px`,
-                        width: '40px',
-                        height: '40px',
-                        fontSize: '12px',
-                        borderRadius: '50%'
-                      }}
-                    >
-                      {node.val}
-                    </div>
-                  );
-                })}
+              {/* Canvas Header / Speedometer & Invariant Counters */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)',
+                marginBottom: '16px',
+                borderRadius: '8px'
+              }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span>Root: <strong style={{ color: 'var(--accent-amber)' }}>{activeHeap.length > 0 ? activeHeap[0] : 'None'}</strong></span>
+                  <span>Size: <strong style={{ color: 'var(--accent-cyan)' }}>{activeHeap.length} / 7 elements</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Fill Ratio:</span>
+                  <div style={{
+                    width: '60px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${(activeHeap.length / 7) * 100}%`,
+                      height: '100%',
+                      background: 'var(--accent-cyan)',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
               </div>
 
-              {/* Right Heap Array representation */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px' }}>ARRAY INDEX REPRESENTATION</span>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {activeHeap.map((val: number, idx: number) => {
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'center' }}>
+                {/* Left Heap Tree Canvas */}
+                <div className="visualizer-canvas-container" style={{ minHeight: '220px', position: 'relative', display: 'block' }}>
+                  <svg style={{ width: '100%', height: '100%', minHeight: '200px' }}>
+                    {treeNodes.map((node, idx) => {
+                      if (node.parentIdx === null) return null;
+                      const pCoords = getCoordinates(node.parentIdx);
+                      if (!pCoords) return null;
+                      return (
+                        <line
+                          key={`line-${idx}`}
+                          x1={pCoords.x}
+                          y1={pCoords.y}
+                          x2={node.x}
+                          y2={node.y}
+                          style={{ stroke: 'rgba(255, 255, 255, 0.1)', strokeWidth: 2 }}
+                        />
+                      );
+                    })}
+                  </svg>
+
+                  {treeNodes.map((node, idx) => {
                     const isActive = currentStep.state.active === idx;
                     const isCompare = currentStep.state.compare === idx;
                     const isSuccess = currentStep.state.success === idx;
 
-                    let blockClass = "ds-node";
-                    if (isActive) blockClass += " active";
-                    if (isCompare) blockClass += " compare";
-                    if (isSuccess) blockClass += " success";
+                    let nodeClass = "ds-node animate-fall";
+                    if (isActive) nodeClass += " active";
+                    if (isCompare) nodeClass += " compare";
+                    if (isSuccess) nodeClass += " success";
 
                     return (
-                      <div key={idx} className="array-box">
-                        <div className={blockClass} style={{ width: '42px', height: '42px', borderRadius: '6px' }}>
-                          {val}
-                        </div>
-                        <span className="array-index">[{idx}]</span>
+                      <div
+                        key={`node-${idx}`}
+                        className={nodeClass}
+                        style={{
+                          position: 'absolute',
+                          left: `${node.x - 20}px`,
+                          top: `${node.y - 20}px`,
+                          width: '40px',
+                          height: '40px',
+                          fontSize: '12px',
+                          borderRadius: '50%'
+                        }}
+                      >
+                        {node.val}
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Right Heap Array representation */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px' }}>ARRAY INDEX REPRESENTATION</span>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {activeHeap.map((val: number, idx: number) => {
+                      const isActive = currentStep.state.active === idx;
+                      const isCompare = currentStep.state.compare === idx;
+                      const isSuccess = currentStep.state.success === idx;
+
+                      let blockClass = "ds-node";
+                      if (isActive) blockClass += " active";
+                      if (isCompare) blockClass += " compare";
+                      if (isSuccess) blockClass += " success";
+
+                      return (
+                        <div key={idx} className="array-box">
+                          <div className={blockClass} style={{ width: '42px', height: '42px', borderRadius: '6px' }}>
+                            {val}
+                          </div>
+                          <span className="array-index">[{idx}]</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -375,7 +420,7 @@ export const HeapVisualizer: React.FC<HeapVisualizerProps> = ({ onAddXP }) => {
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={currentStep.explanation}
+            explanation={currentExplanation}
           />
         </div>
 

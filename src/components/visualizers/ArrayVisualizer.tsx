@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { PlaybackControls } from '../PlaybackControls';
 import { ComplexityTable } from '../ComplexityTable';
 import { CodeExecutor } from '../CodeExecutor';
-import type { VisualizerStep } from '../../types';
+import type { VisualizerStep, Annotation } from '../../types';
+import { loadAnnotations, saveAnnotations } from '../../utils/annotations';
+import { HelpOverlay } from '../HelpOverlay';
 
 interface ArrayVisualizerProps {
+  languageMode: 'technical' | 'analogy';
   onAddXP: (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz') => void;
 }
 
-export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => {
+export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ languageMode, onAddXP }) => {
   const [array, setArray] = useState<number[]>([10, 20, 30, 40]);
   const [inputValue, setInputValue] = useState('');
   const [inputIndex, setInputIndex] = useState('');
@@ -19,6 +22,15 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(800);
+  // Help overlay state
+  const [showHelp, setShowHelp] = useState(false);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+
+  // Load persisted annotations for this visualizer
+  useEffect(() => {
+    const saved = loadAnnotations('array');
+    setAnnotations(saved);
+  }, []);
 
   // Initialize with dummy step
   useEffect(() => {
@@ -30,7 +42,8 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
       {
         stepNumber: 1,
         explanation: initialMessage,
-        state: { arr: [...initialArray], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: -1 }
+        analogyExplanation: "Here is our shelf containing some initial boxes placed side-by-side.",
+        state: { arr: [...initialArray], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: -1, comparisons: 0, rangeRemaining: initialArray.length }
       }
     ]);
     setCurrentStepIndex(0);
@@ -61,7 +74,8 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
     newSteps.push({
       stepNumber: 1,
       explanation: `Check index ${idx} to see where to insert element ${val}.`,
-      state: { arr: [...currentArr], activeIdx: idx, compareIdx: -1, insertAt: idx, successIdx: -1 }
+      analogyExplanation: `Find the ${idx + 1}-th parking spot in the row to insert our new car.`,
+      state: { arr: [...currentArr], activeIdx: idx, compareIdx: -1, insertAt: idx, successIdx: -1, comparisons: 0, rangeRemaining: currentArr.length }
     });
 
     // Step 2: Show element shifting (if index is in middle)
@@ -69,7 +83,8 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
       newSteps.push({
         stepNumber: 2,
         explanation: `Shift elements from index ${idx} to index ${currentArr.length - 1} one slot to the right.`,
-        state: { arr: [...currentArr], activeIdx: -1, compareIdx: -1, insertAt: idx, shifting: true, successIdx: -1 }
+        analogyExplanation: `Ask everyone parked from spot ${idx} onwards to shift one spot to the right to clear space.`,
+        state: { arr: [...currentArr], activeIdx: -1, compareIdx: -1, insertAt: idx, shifting: true, successIdx: -1, comparisons: 0, rangeRemaining: currentArr.length }
       });
     }
 
@@ -78,7 +93,8 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
     newSteps.push({
       stepNumber: newSteps.length + 1,
       explanation: `Insert element ${val} at index ${idx}.`,
-      state: { arr: [...currentArr], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: idx }
+      analogyExplanation: `Park our new car ${val} into the newly opened spot at index ${idx}.`,
+      state: { arr: [...currentArr], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: idx, comparisons: 0, rangeRemaining: currentArr.length }
     });
 
     setSteps(newSteps);
@@ -100,7 +116,8 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
     newSteps.push({
       stepNumber: 1,
       explanation: `Locate node at index ${idx} for deletion (Value: ${currentArr[idx]}).`,
-      state: { arr: [...currentArr], activeIdx: idx, compareIdx: -1, insertAt: -1, successIdx: -1 }
+      analogyExplanation: `Find the locker number ${idx} containing the package we want to discard.`,
+      state: { arr: [...currentArr], activeIdx: idx, compareIdx: -1, insertAt: -1, successIdx: -1, comparisons: 0, rangeRemaining: currentArr.length }
     });
 
     // Step 2: Remove and shift left
@@ -110,7 +127,8 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
     newSteps.push({
       stepNumber: 2,
       explanation: `Remove ${deletedVal} and shift subsequent elements left to close the gap.`,
-      state: { arr: [...currentArr], activeIdx: -1, compareIdx: -1, insertAt: -1, shifting: true, successIdx: -1 }
+      analogyExplanation: `Remove the package and slide all packages to the right of locker ${idx} one slot left.`,
+      state: { arr: [...currentArr], activeIdx: -1, compareIdx: -1, insertAt: -1, shifting: true, successIdx: -1, comparisons: 0, rangeRemaining: currentArr.length }
     });
 
     setSteps(newSteps);
@@ -134,12 +152,14 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
       {
         stepNumber: 1,
         explanation: `Identify element at index ${idx} (Current Value: ${prevVal}).`,
-        state: { arr: [...array], activeIdx: idx, compareIdx: -1, insertAt: -1, successIdx: -1 }
+        analogyExplanation: `Look inside locker number ${idx} to see the existing item (Value: ${prevVal}).`,
+        state: { arr: [...array], activeIdx: idx, compareIdx: -1, insertAt: -1, successIdx: -1, comparisons: 0, rangeRemaining: array.length }
       },
       {
         stepNumber: 2,
         explanation: `Update value at index ${idx} to ${val}.`,
-        state: { arr: [...currentArr], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: idx }
+        analogyExplanation: `Replace the item inside locker number ${idx} with our new item: ${val}.`,
+        state: { arr: [...currentArr], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: idx, comparisons: 0, rangeRemaining: currentArr.length }
       }
     ];
 
@@ -157,12 +177,15 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
 
     const newSteps: VisualizerStep[] = [];
     let foundIdx = -1;
+    let comparisons = 0;
 
     for (let i = 0; i < array.length; i++) {
+      comparisons++;
       newSteps.push({
         stepNumber: newSteps.length + 1,
         explanation: `Compare index ${i} (Value: ${array[i]}) with search target ${val}.`,
-        state: { arr: [...array], activeIdx: -1, compareIdx: i, insertAt: -1, successIdx: -1 }
+        analogyExplanation: `Open box number ${i} to see if it contains our target item ${val} (Found item: ${array[i]}).`,
+        state: { arr: [...array], activeIdx: -1, compareIdx: i, insertAt: -1, successIdx: -1, comparisons, rangeRemaining: array.length - i }
       });
 
       if (array[i] === val) {
@@ -175,13 +198,15 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
       newSteps.push({
         stepNumber: newSteps.length + 1,
         explanation: `Target value ${val} found successfully at index ${foundIdx}!`,
-        state: { arr: [...array], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: foundIdx }
+        analogyExplanation: `Aha! The target item ${val} is found in box number ${foundIdx}!`,
+        state: { arr: [...array], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: foundIdx, comparisons, rangeRemaining: 0 }
       });
     } else {
       newSteps.push({
         stepNumber: newSteps.length + 1,
         explanation: `Search target ${val} not found in the array.`,
-        state: { arr: [...array], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: -1 }
+        analogyExplanation: `We've opened all boxes, but none of them contained the target item ${val}.`,
+        state: { arr: [...array], activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: -1, comparisons, rangeRemaining: 0 }
       });
     }
 
@@ -246,10 +271,15 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
   };
 
   const currentStep = steps[currentStepIndex] || {
-    state: { arr: array, activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: -1 },
-    explanation: ""
+    state: { arr: array, activeIdx: -1, compareIdx: -1, insertAt: -1, successIdx: -1, comparisons: 0, rangeRemaining: array.length },
+    explanation: "",
+    analogyExplanation: ""
   };
   const activeArr = currentStep.state.arr;
+
+  const currentExplanation = languageMode === 'analogy' 
+    ? (currentStep.analogyExplanation || currentStep.explanation) 
+    : currentStep.explanation;
 
   return (
     <div className="visualizer-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
@@ -260,8 +290,44 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
             <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '24px' }}>Array Sandbox Visualizer</h2>
             
             {/* Visualizer Canvas Container */}
-            <div className="visualizer-canvas-container">
-              <div className="array-container">
+            <div className="visualizer-canvas-container" style={{ display: 'flex', flexDirection: 'column', padding: '0' }}>
+              
+              {/* Canvas Header / Speedometer & Invariant Counters */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)'
+              }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span>Comparisons: <strong style={{ color: 'var(--accent-amber)' }}>{currentStep.state.comparisons || 0}</strong></span>
+                  <span>Active Scope: <strong style={{ color: 'var(--accent-cyan)' }}>{currentStep.state.rangeRemaining !== undefined ? `${currentStep.state.rangeRemaining} / ${array.length} left` : 'Full Array'}</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Search Space Gauge:</span>
+                  <div style={{
+                    width: '60px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${currentStep.state.rangeRemaining !== undefined ? (currentStep.state.rangeRemaining / array.length) * 100 : 100}%`,
+                      height: '100%',
+                      background: 'var(--accent-cyan)',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="array-container" style={{ width: '100%', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {activeArr.map((val: number, idx: number) => {
                   const isActive = currentStep.state.activeIdx === idx;
                   const isCompare = currentStep.state.compareIdx === idx;
@@ -299,8 +365,26 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={currentStep.explanation}
+            explanation={currentExplanation}
           />
+          {/* Help overlay toggle button */}
+          <button
+            className="control-btn"
+            style={{ marginTop: '8px' }}
+            onClick={() => setShowHelp(prev => !prev)}
+          >
+            {showHelp ? 'Close Help' : 'Help'}
+          </button>
+          {showHelp && (
+            <HelpOverlay
+              annotations={annotations}
+              onChange={newAnn => {
+                setAnnotations(newAnn);
+                saveAnnotations('array', newAnn);
+              }}
+              onClose={() => setShowHelp(false)}
+            />
+          )}
         </div>
 
         {/* Custom script editor integration */}
@@ -311,7 +395,7 @@ export const ArrayVisualizer: React.FC<ArrayVisualizerProps> = ({ onAddXP }) => 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h3 style={{ fontSize: '15px', color: 'var(--text-primary)', marginBottom: '16px', fontWeight: 600 }}>Operations</h3>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {/* Input fields */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>

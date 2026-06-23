@@ -2,14 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { PlaybackControls } from '../PlaybackControls';
 import { ComplexityTable } from '../ComplexityTable';
 import { CodeExecutor } from '../CodeExecutor';
-import type { VisualizerStep } from '../../types';
+import type { VisualizerStep, Annotation } from '../../types';
+import { loadAnnotations, saveAnnotations } from '../../utils/annotations';
+import { HelpOverlay } from '../HelpOverlay';
 import { ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { getAnalogy } from '../../utils/analogies';
 
 interface LinkedListVisualizerProps {
+  languageMode: 'technical' | 'analogy';
   onAddXP: (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz') => void;
 }
 
-export const LinkedListVisualizer: React.FC<LinkedListVisualizerProps> = ({ onAddXP }) => {
+export const LinkedListVisualizer: React.FC<LinkedListVisualizerProps> = ({ languageMode, onAddXP }) => {
   const [listType, setListType] = useState<'singly' | 'doubly' | 'circular'>('singly');
   const [nodes, setNodes] = useState<number[]>([15, 25, 35]);
   const [inputValue, setInputValue] = useState('');
@@ -20,6 +24,16 @@ export const LinkedListVisualizer: React.FC<LinkedListVisualizerProps> = ({ onAd
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(850);
+  // Help overlay state
+  const [showHelp, setShowHelp] = useState(false);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+
+  // Load persisted annotations for this visualizer
+  useEffect(() => {
+    const saved = loadAnnotations('linked-list');
+    setAnnotations(saved);
+  }, []);
+
 
   useEffect(() => {
     resetSteps([15, 25, 35], "Initial linked list structure.");
@@ -352,8 +366,13 @@ export const LinkedListVisualizer: React.FC<LinkedListVisualizerProps> = ({ onAd
   };
   const activeNodes = currentStep.state.nodes;
 
+  const currentExplanation = languageMode === 'analogy' 
+    ? getAnalogy('linked-list', currentStep.explanation) 
+    : currentStep.explanation;
+
   return (
     <div className="visualizer-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
+      {/* Primary visualizer panels */}
       <div>
         <div className="glass-panel" style={{ minHeight: '320px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
@@ -367,8 +386,43 @@ export const LinkedListVisualizer: React.FC<LinkedListVisualizerProps> = ({ onAd
             </div>
 
             {/* Canvas Container */}
-            <div className="visualizer-canvas-container" style={{ overflowX: 'auto', justifyContent: 'flex-start', padding: '40px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="visualizer-canvas-container" style={{ display: 'flex', flexDirection: 'column', padding: '0', alignItems: 'stretch' }}>
+              
+              {/* Canvas Header / Speedometer & Invariant Counters */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)'
+              }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span>Hops: <strong style={{ color: 'var(--accent-amber)' }}>{currentStep.state.activeIdx !== -1 ? currentStep.state.activeIdx : 0}</strong></span>
+                  <span>Node Count: <strong style={{ color: 'var(--accent-cyan)' }}>{activeNodes.length}</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Traversal Gauge:</span>
+                  <div style={{
+                    width: '60px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${currentStep.state.activeIdx !== -1 && activeNodes.length > 0 ? ((currentStep.state.activeIdx + 1) / activeNodes.length) * 100 : 0}%`,
+                      height: '100%',
+                      background: 'var(--accent-cyan)',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflowX: 'auto', padding: '40px 20px', width: '100%', justifyContent: 'flex-start' }}>
                 {/* HEAD Pointer */}
                 <div style={{
                   fontFamily: 'var(--font-mono)',
@@ -378,11 +432,12 @@ export const LinkedListVisualizer: React.FC<LinkedListVisualizerProps> = ({ onAd
                   background: 'rgba(99, 102, 241, 0.1)',
                   padding: '4px 8px',
                   borderRadius: '4px',
-                  border: '1px solid rgba(99, 102, 241, 0.2)'
+                  border: '1px solid rgba(99, 102, 241, 0.2)',
+                  flexShrink: 0
                 }}>
                   Head
                 </div>
-                <ArrowRight size={16} className="list-arrow active" />
+                <ArrowRight size={16} className="list-arrow active" style={{ flexShrink: 0 }} />
 
                 {/* Nodes rendering */}
                 {activeNodes.map((val: number, idx: number) => {
@@ -416,7 +471,7 @@ export const LinkedListVisualizer: React.FC<LinkedListVisualizerProps> = ({ onAd
                 })}
 
                 {/* TAIL Pointer */}
-                <ArrowRight size={16} className="list-arrow" />
+                <ArrowRight size={16} className="list-arrow" style={{ flexShrink: 0 }} />
                 <div style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '11px',
@@ -425,7 +480,8 @@ export const LinkedListVisualizer: React.FC<LinkedListVisualizerProps> = ({ onAd
                   background: 'rgba(255, 255, 255, 0.03)',
                   padding: '4px 8px',
                   borderRadius: '4px',
-                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  flexShrink: 0
                 }}>
                   {listType === 'circular' ? 'Head (Loop)' : 'NULL'}
                 </div>
@@ -443,8 +499,26 @@ export const LinkedListVisualizer: React.FC<LinkedListVisualizerProps> = ({ onAd
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={currentStep.explanation}
+            explanation={currentExplanation}
           />
+          {/* Help overlay toggle button */}
+          <button
+            className="control-btn"
+            style={{ marginTop: '8px' }}
+            onClick={() => setShowHelp(prev => !prev)}
+          >
+            {showHelp ? 'Close Help' : 'Help'}
+          </button>
+          {showHelp && (
+            <HelpOverlay
+              annotations={annotations}
+              onChange={newAnn => {
+                setAnnotations(newAnn);
+                saveAnnotations('linked-list', newAnn);
+              }}
+              onClose={() => setShowHelp(false)}
+            />
+          )}
         </div>
 
         <CodeExecutor structureType="linked-list" onExecuteCommands={handleExecuteCommands} />

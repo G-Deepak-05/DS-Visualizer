@@ -4,12 +4,14 @@ import { ComplexityTable } from '../ComplexityTable';
 import { CodeExecutor } from '../CodeExecutor';
 import type { VisualizerStep } from '../../types';
 import { ArrowRight } from 'lucide-react';
+import { getAnalogy } from '../../utils/analogies';
 
 interface HashTableVisualizerProps {
+  languageMode: 'technical' | 'analogy';
   onAddXP: (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz') => void;
 }
 
-export const HashTableVisualizer: React.FC<HashTableVisualizerProps> = ({ onAddXP }) => {
+export const HashTableVisualizer: React.FC<HashTableVisualizerProps> = ({ languageMode, onAddXP }) => {
   const [probeType, setProbeType] = useState<'chaining' | 'linear' | 'quadratic'>('chaining');
   const [inputValue, setInputValue] = useState('');
   const tableSize = 7;
@@ -263,6 +265,15 @@ export const HashTableVisualizer: React.FC<HashTableVisualizerProps> = ({ onAddX
     explanation: ""
   };
 
+  const currentExplanation = languageMode === 'analogy' 
+    ? getAnalogy('hash-table', currentStep.explanation) 
+    : currentStep.explanation;
+
+  const isChaining = probeType === 'chaining';
+  const occupiedCount = isChaining 
+    ? (currentStep.state.chains ? currentStep.state.chains.filter((c: number[]) => c.length > 0).length : 0)
+    : (currentStep.state.probes ? currentStep.state.probes.filter((c: number | null) => c !== null).length : 0);
+
   return (
     <div className="visualizer-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
       <div>
@@ -278,93 +289,131 @@ export const HashTableVisualizer: React.FC<HashTableVisualizerProps> = ({ onAddX
             </div>
 
             {/* Visualizer Canvas container */}
-            <div className="visualizer-canvas-container" style={{ minHeight: '260px', overflowY: 'auto' }}>
+            <div className="visualizer-canvas-container" style={{ display: 'flex', flexDirection: 'column', padding: '0', alignItems: 'stretch', minHeight: '260px' }}>
               
-              {/* Chaining Layout */}
-              {currentStep.state.type === 'chaining' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '400px' }}>
-                  {currentStep.state.chains.map((chain: number[], bucketIdx: number) => {
-                    const isBucketActive = currentStep.state.activeBucket === bucketIdx || currentStep.state.successBucket === bucketIdx;
-                    const activeNodeIdx = currentStep.state.activeNodeIdx;
-                    const successNodeIdx = currentStep.state.successNodeIdx;
-
-                    return (
-                      <div key={bucketIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {/* Index Bucket */}
-                        <div style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          background: isBucketActive ? 'var(--accent-indigo)' : 'var(--bg-tertiary)',
-                          border: `1px solid ${isBucketActive ? 'var(--accent-cyan)' : 'var(--glass-border)'}`
-                        }}>
-                          {bucketIdx}
-                        </div>
-                        <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
-
-                        {/* Chain List */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {chain.map((nodeVal, nodeIdx) => {
-                            const isNodeActive = isBucketActive && activeNodeIdx === nodeIdx;
-                            const isNodeSuccess = currentStep.state.successBucket === bucketIdx && successNodeIdx === nodeIdx;
-                            
-                            let nodeClass = "ds-node";
-                            if (isNodeActive) nodeClass += " active";
-                            if (isNodeSuccess) nodeClass += " success";
-
-                            return (
-                              <React.Fragment key={nodeIdx}>
-                                <div className={nodeClass} style={{ width: '40px', height: '32px', fontSize: '12px', borderRadius: '4px' }}>
-                                  {nodeVal}
-                                </div>
-                                <ArrowRight size={12} style={{ color: 'var(--text-muted)' }} />
-                              </React.Fragment>
-                            );
-                          })}
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>NULL</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+              {/* Canvas Header / Speedometer & Invariant Counters */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)'
+              }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span>Active Bucket: <strong style={{ color: 'var(--accent-amber)' }}>{isChaining ? (currentStep.state.activeBucket !== -1 ? currentStep.state.activeBucket : 'None') : (currentStep.state.activeIdx !== -1 ? currentStep.state.activeIdx : 'None')}</strong></span>
+                  <span>Occupancy: <strong style={{ color: 'var(--accent-cyan)' }}>{occupiedCount} / 7 Buckets</strong></span>
                 </div>
-              ) : (
-                /* Probing Layout */
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  {currentStep.state.probes.map((cell: number | null, cellIdx: number) => {
-                    const isActive = currentStep.state.activeIdx === cellIdx;
-                    const isSuccess = currentStep.state.successIdx === cellIdx;
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Load Factor:</span>
+                  <div style={{
+                    width: '60px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${(occupiedCount / 7) * 100}%`,
+                      height: '100%',
+                      background: 'var(--accent-cyan)',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+              </div>
 
-                    let cellClass = "ds-node";
-                    if (isActive) cellClass += " active";
-                    if (isSuccess) cellClass += " success";
+              {/* Main Canvas Area */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '40px 20px', overflowY: 'auto' }}>
+                {isChaining ? (
+                  /* Chaining Layout */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '400px' }}>
+                    {currentStep.state.chains && currentStep.state.chains.map((chain: number[], bucketIdx: number) => {
+                      const isBucketActive = currentStep.state.activeBucket === bucketIdx || currentStep.state.successBucket === bucketIdx;
+                      const activeNodeIdx = currentStep.state.activeNodeIdx;
+                      const successNodeIdx = currentStep.state.successNodeIdx;
 
-                    return (
-                      <div key={cellIdx} className="array-box">
-                        <div 
-                          className={cellClass}
-                          style={{
-                            width: '52px',
-                            height: '52px',
+                      return (
+                        <div key={bucketIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {/* Index Bucket */}
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '6px',
-                            background: cell === null ? 'transparent' : undefined,
-                            borderStyle: cell === null ? 'dashed' : 'solid',
-                            borderColor: cell === null ? 'rgba(255, 255, 255, 0.15)' : undefined
-                          }}
-                        >
-                          {cell !== null ? cell : '-'}
+                            background: isBucketActive ? 'var(--accent-indigo)' : 'var(--bg-tertiary)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: isBucketActive ? '#fff' : 'var(--text-secondary)'
+                          }}>
+                            {bucketIdx}
+                          </div>
+
+                          <ArrowRight size={14} style={{ color: 'rgba(255,255,255,0.2)' }} />
+
+                          {/* Chains rendering */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {chain.map((nodeVal: number, nodeIdx: number) => {
+                              const isNodeActive = isBucketActive && activeNodeIdx === nodeIdx;
+                              const isNodeSuccess = isBucketActive && successNodeIdx === nodeIdx;
+
+                              let nodeClass = "ds-node";
+                              if (isNodeActive) nodeClass += " active";
+                              if (isNodeSuccess) nodeClass += " success";
+
+                              return (
+                                <React.Fragment key={nodeIdx}>
+                                  <div className={nodeClass} style={{ width: '40px', height: '32px', fontSize: '12px', borderRadius: '4px' }}>
+                                    {nodeVal}
+                                  </div>
+                                  <ArrowRight size={12} style={{ color: 'var(--text-muted)' }} />
+                                </React.Fragment>
+                              );
+                            })}
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>NULL</span>
+                          </div>
                         </div>
-                        <span className="array-index">Index {cellIdx}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* Probing Layout */
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {currentStep.state.probes && currentStep.state.probes.map((cell: number | null, cellIdx: number) => {
+                      const isActive = currentStep.state.activeIdx === cellIdx;
+                      const isSuccess = currentStep.state.successIdx === cellIdx;
+
+                      let cellClass = "ds-node";
+                      if (isActive) cellClass += " active";
+                      if (isSuccess) cellClass += " success";
+
+                      return (
+                        <div key={cellIdx} className="array-box">
+                          <div 
+                            className={cellClass}
+                            style={{
+                              width: '52px',
+                              height: '52px',
+                              borderRadius: '6px',
+                              background: cell === null ? 'transparent' : undefined,
+                              borderStyle: cell === null ? 'dashed' : 'solid',
+                              borderColor: cell === null ? 'rgba(255, 255, 255, 0.15)' : undefined
+                            }}
+                          >
+                            {cell !== null ? cell : '-'}
+                          </div>
+                          <span className="array-index">Index {cellIdx}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -378,7 +427,7 @@ export const HashTableVisualizer: React.FC<HashTableVisualizerProps> = ({ onAddX
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={currentStep.explanation}
+            explanation={currentExplanation}
           />
         </div>
 

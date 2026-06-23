@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { VisualizerStep } from '../../types';
+import type { VisualizerStep } from '../../../types';
 
 /**
  * Generic hook to manage visualizer state and playback.

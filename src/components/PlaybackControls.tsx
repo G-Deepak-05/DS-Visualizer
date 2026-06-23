@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Play, Pause, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Play, Pause, ChevronLeft, ChevronRight, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 
 interface PlaybackControlsProps {
   currentStep: number;
@@ -27,6 +27,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   explanation
 }) => {
   const timerRef = useRef<any>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   useEffect(() => {
     if (isPlaying) {
@@ -46,6 +47,40 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
     };
   }, [isPlaying, currentStep, totalSteps, speed, onNext, setIsPlaying]);
 
+  const speak = (text: string) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      if (text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        setIsSpeaking(true);
+        window.speechSynthesis.speak(utterance);
+      }
+    } else {
+      alert("Text-to-speech is not supported in this browser.");
+    }
+  };
+
+  const stopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  // Auto-update speech if currently playing/narrating
+  useEffect(() => {
+    if (isSpeaking) {
+      speak(explanation);
+    }
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [explanation]);
+
   return (
     <div style={{
       background: 'var(--bg-secondary)',
@@ -59,7 +94,10 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
             className="control-btn" 
-            onClick={onPrev} 
+            onClick={() => {
+              stopSpeaking();
+              onPrev();
+            }} 
             disabled={currentStep === 0}
             title="Previous Step"
           >
@@ -68,7 +106,9 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
           
           <button 
             className="control-btn active" 
-            onClick={() => setIsPlaying(!isPlaying)}
+            onClick={() => {
+              setIsPlaying(!isPlaying);
+            }}
             disabled={totalSteps <= 1}
             title={isPlaying ? "Pause" : "Play Animation"}
           >
@@ -77,7 +117,10 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
           
           <button 
             className="control-btn" 
-            onClick={onNext} 
+            onClick={() => {
+              stopSpeaking();
+              onNext();
+            }} 
             disabled={currentStep >= totalSteps - 1}
             title="Next Step"
           >
@@ -86,7 +129,10 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
 
           <button 
             className="control-btn" 
-            onClick={onReset}
+            onClick={() => {
+              stopSpeaking();
+              onReset();
+            }}
             title="Reset to Start"
           >
             <RotateCcw size={18} />
@@ -124,15 +170,43 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
       {explanation && (
         <div style={{
           marginTop: '16px',
-          padding: '12px',
+          padding: '12px 16px',
           background: 'rgba(255, 255, 255, 0.02)',
           borderLeft: '3px solid var(--accent-indigo)',
           borderRadius: '4px',
           fontSize: '13px',
           color: 'var(--text-secondary)',
-          lineHeight: '1.5'
+          lineHeight: '1.5',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: '12px'
         }}>
-          {explanation}
+          <div style={{ flex: 1 }}>{explanation}</div>
+          <button
+            onClick={() => {
+              if (isSpeaking) {
+                stopSpeaking();
+              } else {
+                speak(explanation);
+              }
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: isSpeaking ? 'var(--accent-cyan)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '4px',
+              borderRadius: '4px',
+              transition: 'all 0.2s ease',
+            }}
+            title={isSpeaking ? "Stop Listening" : "Listen (Text to Speech)"}
+          >
+            {isSpeaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
         </div>
       )}
     </div>

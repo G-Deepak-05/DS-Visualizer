@@ -3,8 +3,10 @@ import { PlaybackControls } from '../PlaybackControls';
 import { ComplexityTable } from '../ComplexityTable';
 import { CodeExecutor } from '../CodeExecutor';
 import type { VisualizerStep } from '../../types';
+import { getAnalogy } from '../../utils/analogies';
 
 interface QueueVisualizerProps {
+  languageMode: 'technical' | 'analogy';
   onAddXP: (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz') => void;
 }
 
@@ -13,7 +15,7 @@ interface QueueNode {
   priority?: number;
 }
 
-export const QueueVisualizer: React.FC<QueueVisualizerProps> = ({ onAddXP }) => {
+export const QueueVisualizer: React.FC<QueueVisualizerProps> = ({ languageMode, onAddXP }) => {
   const [queueType, setQueueType] = useState<'simple' | 'circular' | 'deque' | 'priority'>('simple');
   const [queue, setQueue] = useState<QueueNode[]>([
     { value: 10 },
@@ -283,6 +285,16 @@ export const QueueVisualizer: React.FC<QueueVisualizerProps> = ({ onAddXP }) => 
     explanation: ""
   };
 
+  const currentExplanation = languageMode === 'analogy' 
+    ? getAnalogy('queue', currentStep.explanation) 
+    : currentStep.explanation;
+
+  const isCircular = queueType === 'circular';
+  const queueLength = isCircular 
+    ? circularSlots.filter(x => x !== null).length 
+    : (currentStep.state.q ? currentStep.state.q.length : 0);
+  const queueCapacity = isCircular ? circularCapacity : 5; // default capacity in visualizer is 5
+
   return (
     <div className="visualizer-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
       <div>
@@ -298,123 +310,161 @@ export const QueueVisualizer: React.FC<QueueVisualizerProps> = ({ onAddXP }) => 
               </div>
             </div>
 
-            {/* Canvas Area */}
-            <div className="visualizer-canvas-container" style={{ minHeight: '260px' }}>
+            {/* Canvas Container */}
+            <div className="visualizer-canvas-container" style={{ display: 'flex', flexDirection: 'column', padding: '0', alignItems: 'stretch', minHeight: '260px' }}>
               
-              {/* Circular Queue Display */}
-              {currentStep.state.type === 'circular' ? (
-                <div style={{ display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center' }}>
-                  {/* Render circular slots */}
+              {/* Canvas Header / Speedometer & Invariant Counters */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)'
+              }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span>Front: <strong style={{ color: 'var(--accent-amber)' }}>{isCircular ? currentStep.state.front : (queueLength > 0 ? 0 : 'None')}</strong></span>
+                  <span>Rear: <strong style={{ color: 'var(--accent-indigo)' }}>{isCircular ? currentStep.state.rear : (queueLength > 0 ? queueLength - 1 : 'None')}</strong></span>
+                  <span>Queue Size: <strong style={{ color: 'var(--accent-cyan)' }}>{queueLength} / {queueCapacity} Nodes</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Load Gauge:</span>
                   <div style={{
-                    position: 'relative',
-                    width: '200px',
-                    height: '200px',
-                    borderRadius: '50%',
-                    border: '3px dashed rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    width: '60px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden'
                   }}>
-                    {currentStep.state.slots.map((val: number | null, idx: number) => {
-                      const angle = (idx * 360) / circularCapacity;
-                      const rad = (angle * Math.PI) / 180;
-                      const r = 70; // radius
-                      const x = r * Math.sin(rad);
-                      const y = -r * Math.cos(rad);
-
-                      const isFront = currentStep.state.front === idx;
-                      const isRear = currentStep.state.rear === idx;
-                      const isActive = currentStep.state.active === idx;
-                      const isSuccess = currentStep.state.success === idx;
-
-                      let nodeClass = "ds-node";
-                      if (isActive) nodeClass += " active";
-                      if (isSuccess) nodeClass += " success";
-
-                      return (
-                        <div 
-                          key={idx} 
-                          className={nodeClass}
-                          style={{
-                            position: 'absolute',
-                            left: `calc(50% + ${x}px - 26px)`,
-                            top: `calc(50% + ${y}px - 26px)`,
-                            width: '46px',
-                            height: '46px',
-                            borderRadius: '50%',
-                            fontSize: '13px',
-                            background: val === null ? 'transparent' : undefined,
-                            borderStyle: val === null ? 'dashed' : 'solid',
-                            borderColor: val === null ? 'rgba(255, 255, 255, 0.15)' : undefined
-                          }}
-                        >
-                          {val !== null ? val : idx}
-                          {isFront && (
-                            <span style={{ position: 'absolute', top: '-18px', fontSize: '9px', color: 'var(--accent-indigo)', fontWeight: 700 }}>FRONT</span>
-                          )}
-                          {isRear && (
-                            <span style={{ position: 'absolute', bottom: '-18px', fontSize: '9px', color: 'var(--accent-cyan)', fontWeight: 700 }}>REAR</span>
-                          )}
-                        </div>
-                      );
-                    })}
+                    <div style={{
+                      width: `${(queueLength / queueCapacity) * 100}%`,
+                      height: '100%',
+                      background: 'var(--accent-cyan)',
+                      transition: 'width 0.4s ease'
+                    }} />
                   </div>
                 </div>
-              ) : (
-                /* Linear Queue Display */
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--accent-indigo)', fontWeight: 600 }}>Front →</span>
-                  
-                  <div className="queue-container">
-                    {currentStep.state.q.map((node: QueueNode, idx: number) => {
-                      const isActive = currentStep.state.active === idx;
-                      const isCompare = currentStep.state.compare === idx;
-                      const isSuccess = currentStep.state.success === idx;
+              </div>
 
-                      let nodeClass = "ds-node";
-                      if (isActive) nodeClass += " active";
-                      if (isCompare) nodeClass += " compare";
-                      if (isSuccess) nodeClass += " success";
+              {/* Main Canvas Area */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: '100%', padding: '40px 20px' }}>
+                {queueType === 'circular' ? (
+                  /* Circular Queue Display */
+                  <div style={{ position: 'relative', width: '220px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{
+                      width: '180px',
+                      height: '180px',
+                      borderRadius: '50%',
+                      border: '3px dashed var(--accent-indigo)',
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600 }}>CIRCULAR</span>
+                      {circularSlots.map((val: number | null, idx: number) => {
+                        const angle = idx * 72; // 360 / 5 slots
+                        const rad = (angle * Math.PI) / 180;
+                        const r = 70; // radius
+                        const x = r * Math.sin(rad);
+                        const y = -r * Math.cos(rad);
 
-                      return (
-                        <div key={idx} style={{ position: 'relative' }}>
-                          <div className={nodeClass}>
-                            {node.value}
-                            {node.priority !== undefined && (
-                              <span style={{
-                                position: 'absolute',
-                                top: '-8px',
-                                right: '-8px',
-                                background: 'var(--accent-amber)',
-                                color: '#000',
-                                fontSize: '9px',
-                                fontWeight: 800,
-                                padding: '2px 4px',
-                                borderRadius: '4px'
-                              }}>
-                                P{node.priority}
-                              </span>
+                        const isFront = currentStep.state.front === idx;
+                        const isRear = currentStep.state.rear === idx;
+                        const isActive = currentStep.state.active === idx;
+                        const isSuccess = currentStep.state.success === idx;
+
+                        let nodeClass = "ds-node";
+                        if (isActive) nodeClass += " active";
+                        if (isSuccess) nodeClass += " success";
+
+                        return (
+                          <div 
+                            key={idx} 
+                            className={nodeClass}
+                            style={{
+                              position: 'absolute',
+                              left: `calc(50% + ${x}px - 26px)`,
+                              top: `calc(50% + ${y}px - 26px)`,
+                              width: '46px',
+                              height: '46px',
+                              borderRadius: '50%',
+                              fontSize: '13px',
+                              background: val === null ? 'transparent' : undefined,
+                              borderStyle: val === null ? 'dashed' : 'solid',
+                              borderColor: val === null ? 'rgba(255, 255, 255, 0.15)' : undefined
+                            }}
+                          >
+                            {val !== null ? val : idx}
+                            {isFront && (
+                              <span style={{ position: 'absolute', top: '-18px', fontSize: '9px', color: 'var(--accent-indigo)', fontWeight: 700 }}>FRONT</span>
+                            )}
+                            {isRear && (
+                              <span style={{ position: 'absolute', bottom: '-18px', fontSize: '9px', color: 'var(--accent-cyan)', fontWeight: 700 }}>REAR</span>
                             )}
                           </div>
-                          
-                          {idx === 0 && (
-                            <span style={{ position: 'absolute', bottom: '-26px', left: '12px', fontSize: '9px', color: 'var(--accent-indigo)', fontWeight: 700 }}>Front</span>
-                          )}
-                          {idx === currentStep.state.q.length - 1 && (
-                            <span style={{ position: 'absolute', bottom: '-26px', left: '14px', fontSize: '9px', color: 'var(--accent-cyan)', fontWeight: 700 }}>Rear</span>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {currentStep.state.q.length === 0 && (
-                      <span style={{ color: 'var(--text-muted)', fontSize: '12px', width: '120px', textAlign: 'center' }}>Empty Queue</span>
-                    )}
+                        );
+                      })}
+                    </div>
                   </div>
+                ) : (
+                  /* Linear Queue Display */
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--accent-indigo)', fontWeight: 600 }}>Front →</span>
+                    
+                    <div className="queue-container">
+                      {currentStep.state.q && currentStep.state.q.map((node: QueueNode, idx: number) => {
+                        const isActive = currentStep.state.active === idx;
+                        const isCompare = currentStep.state.compare === idx;
+                        const isSuccess = currentStep.state.success === idx;
 
-                  <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 600 }}>← Rear</span>
-                </div>
-              )}
+                        let nodeClass = "ds-node";
+                        if (isActive) nodeClass += " active";
+                        if (isCompare) nodeClass += " compare";
+                        if (isSuccess) nodeClass += " success";
+
+                        return (
+                          <div key={idx} style={{ position: 'relative' }}>
+                            <div className={nodeClass}>
+                              {node.value}
+                              {node.priority !== undefined && (
+                                <span style={{
+                                  position: 'absolute',
+                                  top: '-8px',
+                                  right: '-8px',
+                                  background: 'var(--accent-amber)',
+                                  color: '#000',
+                                  fontSize: '9px',
+                                  fontWeight: 800,
+                                  padding: '2px 4px',
+                                  borderRadius: '4px'
+                                }}>
+                                  P{node.priority}
+                                </span>
+                              )}
+                            </div>
+                            
+                            {idx === 0 && (
+                              <span style={{ position: 'absolute', bottom: '-26px', left: '12px', fontSize: '9px', color: 'var(--accent-indigo)', fontWeight: 700 }}>Front</span>
+                            )}
+                            {idx === currentStep.state.q.length - 1 && (
+                              <span style={{ position: 'absolute', bottom: '-26px', left: '14px', fontSize: '9px', color: 'var(--accent-cyan)', fontWeight: 700 }}>Rear</span>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {(!currentStep.state.q || currentStep.state.q.length === 0) && (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '12px', width: '120px', textAlign: 'center' }}>Empty Queue</span>
+                      )}
+                    </div>
+
+                    <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 600 }}>← Rear</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -428,7 +478,7 @@ export const QueueVisualizer: React.FC<QueueVisualizerProps> = ({ onAddXP }) => 
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={currentStep.explanation}
+            explanation={currentExplanation}
           />
         </div>
 

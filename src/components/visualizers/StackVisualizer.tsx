@@ -3,12 +3,14 @@ import { PlaybackControls } from '../PlaybackControls';
 import { ComplexityTable } from '../ComplexityTable';
 import { CodeExecutor } from '../CodeExecutor';
 import type { VisualizerStep } from '../../types';
+import { getAnalogy } from '../../utils/analogies';
 
 interface StackVisualizerProps {
+  languageMode: 'technical' | 'analogy';
   onAddXP: (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz') => void;
 }
 
-export const StackVisualizer: React.FC<StackVisualizerProps> = ({ onAddXP }) => {
+export const StackVisualizer: React.FC<StackVisualizerProps> = ({ languageMode, onAddXP }) => {
   const [stack, setStack] = useState<number[]>([10, 20]);
   const [inputValue, setInputValue] = useState('');
 
@@ -171,6 +173,10 @@ export const StackVisualizer: React.FC<StackVisualizerProps> = ({ onAddXP }) => 
   };
   const activeStack = currentStep.state.stack;
 
+  const currentExplanation = languageMode === 'analogy' 
+    ? getAnalogy('stack', currentStep.explanation) 
+    : currentStep.explanation;
+
   return (
     <div className="visualizer-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
       <div>
@@ -179,102 +185,139 @@ export const StackVisualizer: React.FC<StackVisualizerProps> = ({ onAddXP }) => 
             <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '24px' }}>Stack Visualizer</h2>
 
             {/* Visualizer container */}
-            <div className="visualizer-canvas-container" style={{ minHeight: '360px', position: 'relative' }}>
+            <div className="visualizer-canvas-container" style={{ display: 'flex', flexDirection: 'column', padding: '0', alignItems: 'stretch', minHeight: '360px' }}>
               
-              {/* Pop Animation Node Float */}
-              {currentStep.state.animType === 'pop' && currentStep.state.poppedVal !== null && (
-                <div 
-                  className="ds-node animate-pop-up" 
-                  style={{
-                    position: 'absolute',
-                    top: '60px',
-                    borderColor: 'var(--accent-rose)'
-                  }}
-                >
-                  {currentStep.state.poppedVal}
-                </div>
-              )}
-
-              {/* Push hover indicator */}
-              {currentStep.state.animType === 'hover-push' && currentStep.state.newVal !== undefined && (
-                <div 
-                  className="ds-node" 
-                  style={{
-                    position: 'absolute',
-                    top: '20px',
-                    opacity: 0.6,
-                    borderStyle: 'dashed',
-                    borderColor: 'var(--accent-indigo)'
-                  }}
-                >
-                  {currentStep.state.newVal}
-                </div>
-              )}
-
-              {/* Stack Beaker shape container */}
+              {/* Canvas Header / Speedometer & Invariant Counters */}
               <div style={{
-                width: '120px',
-                height: '240px',
-                borderLeft: '4px solid rgba(255, 255, 255, 0.2)',
-                borderRight: '4px solid rgba(255, 255, 255, 0.2)',
-                borderBottom: '4px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '0 0 16px 16px',
                 display: 'flex',
-                flexDirection: 'column-reverse',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                justifyContent: 'flex-start',
-                gap: '8px',
-                padding: '12px 0',
-                background: 'rgba(255, 255, 255, 0.01)',
-                position: 'relative'
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)'
               }}>
-                {activeStack.map((val: number, idx: number) => {
-                  const isTop = idx === activeStack.length - 1;
-                  const isPushAnim = currentStep.state.animType === 'push' && isTop;
-                  const isPeekAnim = currentStep.state.animType === 'peek' && isTop;
-
-                  let nodeClass = "ds-node";
-                  if (isPushAnim) nodeClass += " animate-fall";
-                  if (isPeekAnim) nodeClass += " active pulse-glow";
-
-                  return (
-                    <div 
-                      key={idx} 
-                      className={nodeClass}
-                      style={{
-                        width: '80px',
-                        height: '42px',
-                        borderRadius: '6px',
-                        background: 'linear-gradient(135deg, var(--bg-tertiary), rgba(30, 41, 59, 0.8))'
-                      }}
-                    >
-                      {val}
-                      {isTop && (
-                        <span style={{
-                          position: 'absolute',
-                          right: '-46px',
-                          color: 'var(--accent-cyan)',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          fontFamily: 'var(--font-mono)'
-                        }}>
-                          ← Top
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {activeStack.length === 0 && (
-                  <span style={{
-                    color: 'var(--text-muted)',
-                    fontSize: '12px',
-                    textAlign: 'center',
-                    marginTop: '90px'
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span>Top: <strong style={{ color: 'var(--accent-amber)' }}>{activeStack.length > 0 ? activeStack[activeStack.length - 1] : 'None'}</strong></span>
+                  <span>Stack Height: <strong style={{ color: 'var(--accent-cyan)' }}>{activeStack.length} / 5 Plates</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Capacity Gauge:</span>
+                  <div style={{
+                    width: '60px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden'
                   }}>
-                    Empty Stack
-                  </span>
+                    <div style={{
+                      width: `${(activeStack.length / 5) * 100}%`,
+                      height: '100%',
+                      background: activeStack.length >= 5 ? 'var(--accent-rose)' : 'var(--accent-cyan)',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Canvas Area */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: '100%', padding: '40px 0 20px 0' }}>
+                {/* Pop Animation Node Float */}
+                {currentStep.state.animType === 'pop' && currentStep.state.poppedVal !== null && (
+                  <div 
+                    className="ds-node animate-pop-up" 
+                    style={{
+                      position: 'absolute',
+                      top: '60px',
+                      borderColor: 'var(--accent-rose)'
+                    }}
+                  >
+                    {currentStep.state.poppedVal}
+                  </div>
                 )}
+
+                {/* Push hover indicator */}
+                {currentStep.state.animType === 'hover-push' && currentStep.state.newVal !== undefined && (
+                  <div 
+                    className="ds-node" 
+                    style={{
+                      position: 'absolute',
+                      top: '20px',
+                      opacity: 0.6,
+                      borderStyle: 'dashed',
+                      borderColor: 'var(--accent-indigo)'
+                    }}
+                  >
+                    {currentStep.state.newVal}
+                  </div>
+                )}
+
+                {/* Stack Beaker shape container */}
+                <div style={{
+                  width: '120px',
+                  height: '240px',
+                  borderLeft: '4px solid rgba(255, 255, 255, 0.2)',
+                  borderRight: '4px solid rgba(255, 255, 255, 0.2)',
+                  borderBottom: '4px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '0 0 16px 16px',
+                  display: 'flex',
+                  flexDirection: 'column-reverse',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: '8px',
+                  padding: '12px 0',
+                  background: 'rgba(255, 255, 255, 0.01)',
+                  position: 'relative'
+                }}>
+                  {activeStack.map((val: number, idx: number) => {
+                    const isTop = idx === activeStack.length - 1;
+                    const isPushAnim = currentStep.state.animType === 'push' && isTop;
+                    const isPeekAnim = currentStep.state.animType === 'peek' && isTop;
+
+                    let nodeClass = "ds-node";
+                    if (isPushAnim) nodeClass += " animate-fall";
+                    if (isPeekAnim) nodeClass += " active pulse-glow";
+
+                    return (
+                      <div 
+                        key={idx} 
+                        className={nodeClass}
+                        style={{
+                          width: '80px',
+                          height: '42px',
+                          borderRadius: '6px',
+                          background: 'linear-gradient(135deg, var(--bg-tertiary), rgba(30, 41, 59, 0.8))'
+                        }}
+                      >
+                        {val}
+                        {isTop && (
+                          <span style={{
+                            position: 'absolute',
+                            right: '-46px',
+                            color: 'var(--accent-cyan)',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            fontFamily: 'var(--font-mono)'
+                          }}>
+                            ← Top
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {activeStack.length === 0 && (
+                    <span style={{
+                      color: 'var(--text-muted)',
+                      fontSize: '12px',
+                      textAlign: 'center',
+                      marginTop: '90px'
+                    }}>
+                      Empty Stack
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -289,7 +332,7 @@ export const StackVisualizer: React.FC<StackVisualizerProps> = ({ onAddXP }) => 
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={currentStep.explanation}
+            explanation={currentExplanation}
           />
         </div>
 

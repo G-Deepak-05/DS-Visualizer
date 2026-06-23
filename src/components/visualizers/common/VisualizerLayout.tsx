@@ -1,6 +1,6 @@
 import React from 'react';
-import { PlaybackControls } from '../PlaybackControls';
-import type { VisualizerStep } from '../../types';
+import { PlaybackControls } from '../../PlaybackControls';
+import type { VisualizerStep } from '../../../types';
 
 interface VisualizerLayoutProps {
   title: string;
@@ -50,12 +50,12 @@ export const VisualizerLayout: React.FC<VisualizerLayoutProps> = ({
             totalSteps={steps.length}
             isPlaying={isPlaying}
             setIsPlaying={setIsPlaying}
-            onNext={() => setCurrentStepIndex(p => Math.min(steps.length - 1, p + 1))}
-            onPrev={() => setCurrentStepIndex(p => Math.max(0, p - 1))}
+            onNext={() => setCurrentStepIndex(Math.min(steps.length - 1, currentStepIndex + 1))}
+            onPrev={() => setCurrentStepIndex(Math.max(0, currentStepIndex - 1))}
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={explanation}
+            explanation={explanation || ''}
           />
         </div>
       </div>

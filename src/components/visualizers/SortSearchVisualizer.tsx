@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { PlaybackControls } from '../PlaybackControls';
 import { ComplexityTable } from '../ComplexityTable';
 import type { VisualizerStep } from '../../types';
+import { getAnalogy } from '../../utils/analogies';
 
 interface SortSearchVisualizerProps {
+  languageMode: 'technical' | 'analogy';
   onAddXP: (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz') => void;
 }
 
-export const SortSearchVisualizer: React.FC<SortSearchVisualizerProps> = ({ onAddXP }) => {
+export const SortSearchVisualizer: React.FC<SortSearchVisualizerProps> = ({ languageMode, onAddXP }) => {
   const [algoMode, setAlgoMode] = useState<'sort' | 'search'>('sort');
   const [activeSort, setActiveSort] = useState<'bubble' | 'selection' | 'insertion' | 'quick'>('bubble');
   const [activeSearch, setActiveSearch] = useState<'linear' | 'binary'>('linear');
@@ -330,6 +332,14 @@ export const SortSearchVisualizer: React.FC<SortSearchVisualizerProps> = ({ onAd
   };
   const activeArr = currentStep.state.arr;
 
+  const currentExplanation = languageMode === 'analogy' 
+    ? getAnalogy('sort-search', currentStep.explanation) 
+    : currentStep.explanation;
+
+  const low = currentStep.state.low !== undefined ? currentStep.state.low : -1;
+  const high = currentStep.state.high !== undefined ? currentStep.state.high : -1;
+  const searchRangeSize = (low !== -1 && high !== -1) ? (high - low + 1) : array.length;
+
   return (
     <div className="visualizer-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
       <div>
@@ -344,9 +354,45 @@ export const SortSearchVisualizer: React.FC<SortSearchVisualizerProps> = ({ onAd
               </div>
             </div>
 
-            {/* Bars Visualization Canvas */}
-            <div className="visualizer-canvas-container" style={{ minHeight: '260px', padding: '10px 40px' }}>
-              <div className="sort-bar-container">
+            {/* Bars Visualization Canvas with stats */}
+            <div className="visualizer-canvas-container" style={{ display: 'flex', flexDirection: 'column', padding: 0, alignItems: 'stretch', minHeight: '260px' }}>
+              
+              {/* Canvas Header / Speedometer & Invariant Counters */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)'
+              }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span>Step: <strong style={{ color: 'var(--accent-amber)' }}>{currentStepIndex + 1} / {steps.length || 1}</strong></span>
+                  <span>Active Scope: <strong style={{ color: 'var(--accent-cyan)' }}>{searchRangeSize} / {array.length} left</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Search Space Gauge:</span>
+                  <div style={{
+                    width: '60px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${(searchRangeSize / array.length) * 100}%`,
+                      height: '100%',
+                      background: 'var(--accent-cyan)',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bars Visual Area */}
+              <div className="sort-bar-container" style={{ flex: 1, padding: '30px 40px 10px 40px' }}>
                 {activeArr.map((val: number, idx: number) => {
                   const isActive = currentStep.state.activeIdx === idx;
                   const isCompare = currentStep.state.compareIdx === idx;
@@ -407,7 +453,7 @@ export const SortSearchVisualizer: React.FC<SortSearchVisualizerProps> = ({ onAd
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={currentStep.explanation}
+            explanation={currentExplanation}
           />
         </div>
       </div>

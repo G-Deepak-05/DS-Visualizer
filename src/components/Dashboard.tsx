@@ -10,17 +10,110 @@ import {
   Network, 
   ArrowDownUp, 
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
 import type { ActiveTab, UserStats } from '../types';
-import { ALL_BADGES } from '../utils/storage';
+import { ALL_BADGES, isTabLocked } from '../utils/storage';
 
 interface DashboardProps {
   stats: UserStats;
   setActiveTab: (tab: ActiveTab) => void;
+  questMode?: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab }) => {
+const QuestChapter: React.FC<{
+  levelNum: number;
+  title: string;
+  activeLevel: number;
+  questMode: boolean;
+  topics: any[];
+  setActiveTab: (tab: ActiveTab) => void;
+  stats: UserStats;
+}> = ({ levelNum, title, activeLevel, questMode, topics, setActiveTab, stats }) => {
+  const isLocked = questMode && activeLevel < levelNum;
+  const isCurrent = questMode && activeLevel === levelNum;
+  
+  return (
+    <div style={{ display: 'flex', gap: '20px', zIndex: 1, position: 'relative', marginBottom: '24px' }}>
+      {/* Chapter Indicator node */}
+      <div style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        background: isLocked ? 'var(--bg-tertiary)' : isCurrent ? 'var(--accent-indigo)' : 'var(--accent-emerald)',
+        border: '3px solid var(--bg-primary)',
+        boxShadow: isCurrent ? '0 0 15px var(--accent-indigo)' : 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 700,
+        color: '#fff',
+        fontSize: '16px',
+        transition: 'all 0.3s ease',
+        flexShrink: 0
+      }}>
+        {isLocked ? <Lock size={16} style={{ color: 'var(--text-muted)' }} /> : levelNum}
+      </div>
+
+      {/* Chapter Content */}
+      <div style={{ flex: 1 }}>
+        <h4 style={{ 
+          fontSize: '15px', 
+          fontWeight: 600, 
+          color: isLocked ? 'var(--text-muted)' : 'var(--text-primary)',
+          marginBottom: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          {title}
+          {isLocked && <span style={{ fontSize: '11px', color: 'var(--accent-rose)', fontWeight: 500 }}>(Locked: Reaches at Level {levelNum})</span>}
+          {isCurrent && <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 500 }}>(Active Chapter)</span>}
+        </h4>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          {topics.map((t) => {
+            const topicLocked = isLocked || (questMode && isTabLocked(t.tab, stats, questMode));
+            return (
+              <div 
+                key={t.tab}
+                className="glass-card"
+                onClick={() => !topicLocked && setActiveTab(t.tab)}
+                style={{ 
+                  cursor: topicLocked ? 'not-allowed' : 'pointer', 
+                  opacity: topicLocked ? 0.4 : 1,
+                  display: 'flex', 
+                  gap: '12px', 
+                  alignItems: 'flex-start',
+                  border: isCurrent && !topicLocked ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
+                  boxShadow: isCurrent && !topicLocked ? '0 0 10px rgba(99, 102, 241, 0.1)' : 'none'
+                }}
+              >
+                <div style={{
+                  padding: '8px',
+                  borderRadius: '8px',
+                  background: 'var(--bg-tertiary)',
+                  color: topicLocked ? 'var(--text-muted)' : 'var(--accent-cyan)'
+                }}>
+                  {t.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <h5 style={{ fontSize: '14px', fontWeight: 600, color: topicLocked ? 'var(--text-muted)' : 'var(--text-primary)' }}>{t.title}</h5>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.3' }}>{t.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, questMode }) => {
   const nextLevelRequirement = 300;
   const prevLevelXp = (stats.level - 1) * 300;
   const currentLevelProgress = stats.xp - prevLevelXp;
@@ -141,40 +234,115 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab }) => 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
         {/* Core Topics List */}
         <div>
-          <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>Data Structure Playgrounds</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            {topics.map((t) => (
-              <div 
-                key={t.tab} 
-                className="glass-card" 
-                onClick={() => setActiveTab(t.tab)}
-                style={{ cursor: 'pointer', display: 'flex', gap: '16px', alignItems: 'flex-start' }}
-              >
-                <div style={{
-                  padding: '12px',
-                  borderRadius: '10px',
-                  background: 'var(--bg-tertiary)',
-                  color: 'var(--accent-indigo)'
-                }}>
-                  {t.icon}
-                </div>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <h4 style={{ fontSize: '15px', fontWeight: 600 }}>{t.title}</h4>
-                    <span style={{
-                      fontSize: '9px',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      background: t.level === 'Easy' ? 'rgba(16, 185, 129, 0.15)' : t.level === 'Medium' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                      color: t.level === 'Easy' ? 'var(--accent-emerald)' : t.level === 'Medium' ? 'var(--accent-amber)' : 'var(--accent-rose)',
-                      fontWeight: 600
-                    }}>{t.level}</span>
+          <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>
+            {questMode ? 'DSA Quest Roadmap' : 'Data Structure Playgrounds'}
+          </h3>
+
+          {questMode ? (
+            <div className="glass-panel" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+              {/* Vertical dotted path running through the left side of chapter indicators */}
+              <div style={{
+                position: 'absolute',
+                top: '40px',
+                left: '43px',
+                bottom: '40px',
+                width: '2px',
+                background: 'linear-gradient(to bottom, var(--accent-indigo), var(--accent-cyan), var(--bg-tertiary))',
+                zIndex: 0,
+                opacity: 0.4
+              }} />
+
+              {/* Level 1 Chapter */}
+              <QuestChapter 
+                levelNum={1} 
+                title="Chapter 1: Contiguous & LIFO Storage" 
+                activeLevel={stats.level} 
+                questMode={!!questMode}
+                topics={topics.filter(t => ['array', 'stack'].includes(t.tab))}
+                setActiveTab={setActiveTab}
+                stats={stats}
+              />
+
+              {/* Level 2 Chapter */}
+              <QuestChapter 
+                levelNum={2} 
+                title="Chapter 2: Linear Nodes, Queues & Ordering" 
+                activeLevel={stats.level} 
+                questMode={!!questMode}
+                topics={topics.filter(t => ['linked-list', 'queue', 'sort-search'].includes(t.tab))}
+                setActiveTab={setActiveTab}
+                stats={stats}
+              />
+
+              {/* Level 3 Chapter */}
+              <QuestChapter 
+                levelNum={3} 
+                title="Chapter 3: Hierarchies & Hashing" 
+                activeLevel={stats.level} 
+                questMode={!!questMode}
+                topics={topics.filter(t => ['tree', 'heap', 'hash-table'].includes(t.tab))}
+                setActiveTab={setActiveTab}
+                stats={stats}
+              />
+
+              {/* Level 4 Chapter */}
+              <QuestChapter 
+                levelNum={4} 
+                title="Chapter 4: Complex Networks & Pathfinding" 
+                activeLevel={stats.level} 
+                questMode={!!questMode}
+                topics={topics.filter(t => ['graph'].includes(t.tab))}
+                setActiveTab={setActiveTab}
+                stats={stats}
+              />
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {topics.map((t) => {
+                const topicLocked = isTabLocked(t.tab, stats, !!questMode);
+                return (
+                  <div 
+                    key={t.tab} 
+                    className="glass-card" 
+                    onClick={() => !topicLocked && setActiveTab(t.tab)}
+                    style={{ 
+                      cursor: topicLocked ? 'not-allowed' : 'pointer', 
+                      display: 'flex', 
+                      gap: '16px', 
+                      alignItems: 'flex-start',
+                      opacity: topicLocked ? 0.5 : 1
+                    }}
+                  >
+                    <div style={{
+                      padding: '12px',
+                      borderRadius: '10px',
+                      background: 'var(--bg-tertiary)',
+                      color: topicLocked ? 'var(--text-muted)' : 'var(--accent-indigo)'
+                    }}>
+                      {t.icon}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <h4 style={{ fontSize: '15px', fontWeight: 600, color: topicLocked ? 'var(--text-muted)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {t.title}
+                          {topicLocked && <Lock size={12} style={{ color: 'var(--text-muted)' }} />}
+                        </h4>
+                        <span style={{
+                          fontSize: '9px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: t.level === 'Easy' ? 'rgba(16, 185, 129, 0.15)' : t.level === 'Medium' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                          color: t.level === 'Easy' ? 'var(--accent-emerald)' : t.level === 'Medium' ? 'var(--accent-amber)' : 'var(--accent-rose)',
+                          fontWeight: 600
+                        }}>{t.level}</span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{t.desc}</p>
+                    </div>
                   </div>
-                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{t.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Recent activity & Tips */}

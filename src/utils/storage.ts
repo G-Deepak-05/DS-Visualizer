@@ -1,4 +1,4 @@
-import type { UserStats, Badge, Activity } from '../types';
+import type { UserStats, Badge, Activity, ActiveTab } from '../types';
 
 export const ALL_BADGES: Badge[] = [
   {
@@ -145,4 +145,21 @@ export const addXP = (amount: number, stats: UserStats, activityName: string, ty
 
   saveStats(updatedStats);
   return updatedStats;
+};
+
+export const isTabLocked = (tab: ActiveTab, stats: UserStats, questMode: boolean): boolean => {
+  if (!questMode) return false;
+  if (tab === 'dashboard' || tab === 'admin') return false;
+  if (stats.level >= 4) return false;
+  
+  if (stats.level === 3) {
+    return ['graph', 'interview'].includes(tab);
+  }
+  if (stats.level === 2) {
+    return ['tree', 'heap', 'hash-table', 'graph', 'interview'].includes(tab);
+  }
+  if (stats.level === 1) {
+    return ['linked-list', 'queue', 'sort-search', 'tree', 'heap', 'hash-table', 'graph', 'interview'].includes(tab);
+  }
+  return false;
 };

@@ -13,7 +13,7 @@ import { SortSearchVisualizer } from './components/visualizers/SortSearchVisuali
 import { InterviewMode } from './components/InterviewMode';
 import { AdminPanel } from './components/AdminPanel';
 import type { ActiveTab, UserStats } from './types';
-import { loadStats, addXP } from './utils/storage';
+import { loadStats, addXP, isTabLocked } from './utils/storage';
 
 function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -25,6 +25,10 @@ function App() {
     recentActivity: []
   });
 
+  // accessibility Improvements Config State
+  const [languageMode, setLanguageMode] = useState<'technical' | 'analogy'>('technical');
+  const [questMode, setQuestMode] = useState<boolean>(false);
+
   // Load stats from localStorage on mount
   useEffect(() => {
     setStats(loadStats());
@@ -35,40 +39,56 @@ function App() {
     setStats(updated);
   };
 
+  const handleSwitchTab = (tab: ActiveTab) => {
+    if (isTabLocked(tab, stats, questMode)) {
+      alert(`🔒 Topic Locked! Earn more XP to Level Up and unlock this topic.`);
+      return;
+    }
+    setActiveTab(tab);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard stats={stats} setActiveTab={setActiveTab} />;
+        return <Dashboard stats={stats} setActiveTab={handleSwitchTab} questMode={questMode} />;
       case 'array':
-        return <ArrayVisualizer onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
+        return <ArrayVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'linked-list':
-        return <LinkedListVisualizer onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
+        return <LinkedListVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'stack':
-        return <StackVisualizer onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
+        return <StackVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'queue':
-        return <QueueVisualizer onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
+        return <QueueVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'tree':
-        return <TreeVisualizer onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
+        return <TreeVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'heap':
-        return <HeapVisualizer onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
+        return <HeapVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'hash-table':
-        return <HashTableVisualizer onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
+        return <HashTableVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'graph':
-        return <GraphVisualizer onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
+        return <GraphVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'sort-search':
-        return <SortSearchVisualizer onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
+        return <SortSearchVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'interview':
         return <InterviewMode onAddXP={handleAddXP} />;
       case 'admin':
         return <AdminPanel />;
       default:
-        return <Dashboard stats={stats} setActiveTab={setActiveTab} />;
+        return <Dashboard stats={stats} setActiveTab={handleSwitchTab} questMode={questMode} />;
     }
   };
 
   return (
     <div className="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} stats={stats} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={handleSwitchTab} 
+        stats={stats} 
+        languageMode={languageMode}
+        setLanguageMode={setLanguageMode}
+        questMode={questMode}
+        setQuestMode={setQuestMode}
+      />
       <main className="main-content">
         {renderContent()}
       </main>

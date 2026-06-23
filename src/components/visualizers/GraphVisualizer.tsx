@@ -3,8 +3,10 @@ import { PlaybackControls } from '../PlaybackControls';
 import { ComplexityTable } from '../ComplexityTable';
 import { CodeExecutor } from '../CodeExecutor';
 import type { VisualizerStep } from '../../types';
+import { getAnalogy } from '../../utils/analogies';
 
 interface GraphVisualizerProps {
+  languageMode: 'technical' | 'analogy';
   onAddXP: (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz') => void;
 }
 
@@ -20,7 +22,7 @@ interface GraphEdge {
   weight: number;
 }
 
-export const GraphVisualizer: React.FC<GraphVisualizerProps> = ({ onAddXP }) => {
+export const GraphVisualizer: React.FC<GraphVisualizerProps> = ({ languageMode, onAddXP }) => {
   const [graphType, setGraphType] = useState<'undirected' | 'directed'>('undirected');
   const [nodes, setNodes] = useState<GraphNode[]>([
     { id: 'A', x: 100, y: 80 },
@@ -341,6 +343,13 @@ export const GraphVisualizer: React.FC<GraphVisualizerProps> = ({ onAddXP }) => 
     explanation: ""
   };
 
+  const currentExplanation = languageMode === 'analogy' 
+    ? getAnalogy('graph', currentStep.explanation) 
+    : currentStep.explanation;
+
+  const completedCount = currentStep.state.completedNodes ? currentStep.state.completedNodes.length : 0;
+  const totalNodesCount = nodes.length;
+
   const handleExecuteCommands = (commands: { action: string; params: any[] }[]) => {
     if (commands.length > 0) {
       const cmd = commands[0];
@@ -362,119 +371,174 @@ export const GraphVisualizer: React.FC<GraphVisualizerProps> = ({ onAddXP }) => 
               </div>
             </div>
 
-            {/* Interactive Drag SVG Canvas */}
-            <div className="visualizer-canvas-container" style={{ minHeight: '300px', display: 'block', padding: 0 }}>
-              <svg 
-                ref={canvasRef}
-                style={{ width: '100%', height: '300px', cursor: draggingNodeId ? 'grabbing' : 'default' }}
-                onMouseMove={handleCanvasMouseMove}
-                onMouseUp={handleCanvasMouseUp}
-                onMouseLeave={handleCanvasMouseUp}
-              >
-                {/* Marker definition for Directed Edges Arrow heads */}
-                <defs>
-                  <marker id="arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                    <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.4)" />
-                  </marker>
-                  <marker id="arrow-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent-indigo)" />
-                  </marker>
-                </defs>
+            {/* Interactive Drag SVG Canvas container with stats */}
+            <div className="visualizer-canvas-container" style={{ display: 'flex', flexDirection: 'column', padding: 0, alignItems: 'stretch', minHeight: '300px' }}>
+              
+              {/* Canvas Header / Speedometer & Invariant Counters */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)'
+              }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span>Active: <strong style={{ color: 'var(--accent-amber)' }}>{currentStep.state.activeNode || 'None'}</strong></span>
+                  <span>Visited Nodes: <strong style={{ color: 'var(--accent-cyan)' }}>{completedCount} / {totalNodesCount}</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Visited Ratio:</span>
+                  <div style={{
+                    width: '60px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${totalNodesCount > 0 ? (completedCount / totalNodesCount) * 100 : 0}%`,
+                      height: '100%',
+                      background: 'var(--accent-cyan)',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+              </div>
 
-                {/* Draw Edges */}
-                {currentStep.state.edges.map((edge: GraphEdge, idx: number) => {
-                  const fromNode = currentStep.state.nodes.find((n: GraphNode) => n.id === edge.from);
-                  const toNode = currentStep.state.nodes.find((n: GraphNode) => n.id === edge.to);
-                  if (!fromNode || !toNode) return null;
+              {/* Main SVG Area */}
+              <div style={{ flex: 1, position: 'relative', width: '100%', minHeight: '260px' }}>
+                <svg 
+                  ref={canvasRef}
+                  style={{ width: '100%', height: '260px', cursor: draggingNodeId ? 'grabbing' : 'default', position: 'absolute', top: 0, left: 0 }}
+                  onMouseMove={handleCanvasMouseMove}
+                  onMouseUp={handleCanvasMouseUp}
+                  onMouseLeave={handleCanvasMouseUp}
+                >
+                  {/* Marker definition for Directed Edges Arrow heads */}
+                  <defs>
+                    <marker
+                      id="arrow"
+                      viewBox="0 0 10 10"
+                      refX="20"
+                      refY="5"
+                      markerWidth="6"
+                      markerHeight="6"
+                      orient="auto-start-reverse"
+                    >
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.3)" />
+                    </marker>
+                    <marker
+                      id="arrow-active"
+                      viewBox="0 0 10 10"
+                      refX="20"
+                      refY="5"
+                      markerWidth="6"
+                      markerHeight="6"
+                      orient="auto-start-reverse"
+                    >
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent-indigo)" />
+                    </marker>
+                  </defs>
 
-                  const isTraversed = currentStep.state.traversedEdges.some((te: GraphEdge) => 
-                    (te.from === edge.from && te.to === edge.to) ||
-                    (graphType === 'undirected' && te.from === edge.to && te.to === edge.from)
-                  );
+                  {/* Draw Edges */}
+                  {currentStep.state.edges.map((edge: GraphEdge, idx: number) => {
+                    const fromNode = currentStep.state.nodes.find((n: GraphNode) => n.id === edge.from);
+                    const toNode = currentStep.state.nodes.find((n: GraphNode) => n.id === edge.to);
+
+                    if (!fromNode || !toNode) return null;
+
+                    const isTraversed = currentStep.state.traversedEdges.some((e: any) => 
+                      (e.from === edge.from && e.to === edge.to) ||
+                      (graphType === 'undirected' && e.from === edge.to && e.to === edge.from)
+                    );
+
+                    // Compute midpoint for weights placement
+                    const midX = (fromNode.x + toNode.x) / 2;
+                    const midY = (fromNode.y + toNode.y) / 2;
+
+                    return (
+                      <g key={idx}>
+                        <line
+                          x1={fromNode.x}
+                          y1={fromNode.y}
+                          x2={toNode.x}
+                          y2={toNode.y}
+                          className={`graph-edge ${isTraversed ? 'active' : ''}`}
+                          markerEnd={graphType === 'directed' ? `url(#${isTraversed ? 'arrow-active' : 'arrow'})` : undefined}
+                        />
+                        <rect 
+                          x={midX - 10} 
+                          y={midY - 8} 
+                          width="20" 
+                          height="16" 
+                          rx="4"
+                          fill="var(--bg-primary)" 
+                          stroke="rgba(255,255,255,0.08)"
+                        />
+                        <text
+                          x={midX}
+                          y={midY + 4}
+                          textAnchor="middle"
+                          fill="var(--text-secondary)"
+                          style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}
+                        >
+                          {edge.weight}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Draw Nodes */}
+                {currentStep.state.nodes.map((node: GraphNode) => {
+                  const isActive = currentStep.state.activeNode === node.id;
+                  const isCompare = currentStep.state.compareNode === node.id;
+                  const isCompleted = currentStep.state.completedNodes.includes(node.id);
+
+                  let nodeClass = "ds-node";
+                  if (isActive) nodeClass += " active";
+                  if (isCompare) nodeClass += " compare";
+                  if (isCompleted) nodeClass += " success";
 
                   return (
-                    <g key={`edge-${idx}`}>
-                      <line
-                        x1={fromNode.x}
-                        y1={fromNode.y}
-                        x2={toNode.x}
-                        y2={toNode.y}
-                        className={`graph-edge ${isTraversed ? 'active' : ''}`}
-                        markerEnd={graphType === 'directed' ? (isTraversed ? "url(#arrow-active)" : "url(#arrow)") : undefined}
-                      />
-                      {/* Weight badge text */}
-                      <rect 
-                        x={(fromNode.x + toNode.x) / 2 - 10} 
-                        y={(fromNode.y + toNode.y) / 2 - 10} 
-                        width="20" 
-                        height="16" 
-                        rx="3" 
-                        fill="var(--bg-secondary)" 
-                        stroke="rgba(255,255,255,0.1)"
-                        strokeWidth="1"
-                      />
-                      <text 
-                        x={(fromNode.x + toNode.x) / 2} 
-                        y={(fromNode.y + toNode.y) / 2 + 3} 
-                        fill="var(--text-secondary)" 
-                        fontSize="10" 
-                        fontFamily="var(--font-mono)"
-                        fontWeight="600"
-                        textAnchor="middle"
-                      >
-                        {edge.weight}
-                      </text>
-                    </g>
+                    <div
+                      key={node.id}
+                      className={nodeClass}
+                      onMouseDown={() => handleNodeMouseDown(node.id)}
+                      style={{
+                        position: 'absolute',
+                        left: `${node.x - 22}px`,
+                        top: `${node.y - 22}px`,
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        cursor: 'grab',
+                        userSelect: 'none',
+                        zIndex: 10
+                      }}
+                    >
+                      {node.id}
+                      {currentStep.state.dists && (
+                        <span style={{
+                          position: 'absolute',
+                          bottom: '-18px',
+                          background: 'rgba(0,0,0,0.7)',
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                          fontSize: '9px',
+                          color: 'var(--accent-cyan)',
+                          fontFamily: 'var(--font-mono)'
+                        }}>
+                          d:{currentStep.state.dists[node.id] === Infinity ? '∞' : currentStep.state.dists[node.id]}
+                        </span>
+                      )}
+                    </div>
                   );
                 })}
-              </svg>
-
-              {/* Draw Nodes */}
-              {currentStep.state.nodes.map((node: GraphNode) => {
-                const isActive = currentStep.state.activeNode === node.id;
-                const isCompare = currentStep.state.compareNode === node.id;
-                const isCompleted = currentStep.state.completedNodes.includes(node.id);
-
-                let nodeClass = "ds-node";
-                if (isActive) nodeClass += " active";
-                if (isCompare) nodeClass += " compare";
-                if (isCompleted) nodeClass += " success";
-
-                return (
-                  <div
-                    key={node.id}
-                    className={nodeClass}
-                    onMouseDown={() => handleNodeMouseDown(node.id)}
-                    style={{
-                      position: 'absolute',
-                      left: `${node.x - 22}px`,
-                      top: `${node.y - 22}px`,
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '50%',
-                      cursor: 'grab',
-                      userSelect: 'none',
-                      zIndex: 10
-                    }}
-                  >
-                    {node.id}
-                    {currentStep.state.dists && (
-                      <span style={{
-                        position: 'absolute',
-                        bottom: '-18px',
-                        background: 'rgba(0,0,0,0.7)',
-                        padding: '1px 5px',
-                        borderRadius: '4px',
-                        fontSize: '9px',
-                        color: 'var(--accent-cyan)',
-                        fontFamily: 'var(--font-mono)'
-                      }}>
-                        d:{currentStep.state.dists[node.id] === Infinity ? '∞' : currentStep.state.dists[node.id]}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
+              </div>
             </div>
           </div>
 
@@ -488,7 +552,7 @@ export const GraphVisualizer: React.FC<GraphVisualizerProps> = ({ onAddXP }) => 
             onReset={() => setCurrentStepIndex(0)}
             speed={speed}
             setSpeed={setSpeed}
-            explanation={currentStep.explanation}
+            explanation={currentExplanation}
           />
         </div>
 
