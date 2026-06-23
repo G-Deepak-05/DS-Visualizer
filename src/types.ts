@@ -9,8 +9,7 @@ export type ActiveTab =
   | 'hash-table'
   | 'graph'
   | 'sort-search'
-  | 'interview'
-  | 'admin';
+  | 'interview';
 
 export interface VisualizerStep {
   stepNumber: number;

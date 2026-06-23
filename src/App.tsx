@@ -11,7 +11,6 @@ import { HashTableVisualizer } from './components/visualizers/HashTableVisualize
 import { GraphVisualizer } from './components/visualizers/GraphVisualizer';
 import { SortSearchVisualizer } from './components/visualizers/SortSearchVisualizer';
 import { InterviewMode } from './components/InterviewMode';
-import { AdminPanel } from './components/AdminPanel';
 import type { ActiveTab, UserStats } from './types';
 import { loadStats, addXP, isTabLocked } from './utils/storage';
 
@@ -28,6 +27,8 @@ function App() {
   // accessibility Improvements Config State
   const [languageMode, setLanguageMode] = useState<'technical' | 'analogy'>('technical');
   const [questMode, setQuestMode] = useState<boolean>(false);
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
 
   // Load stats from localStorage on mount
   useEffect(() => {
@@ -71,15 +72,51 @@ function App() {
         return <SortSearchVisualizer languageMode={languageMode} onAddXP={(amount, name) => handleAddXP(amount, name, 'visualization')} />;
       case 'interview':
         return <InterviewMode onAddXP={handleAddXP} />;
-      case 'admin':
-        return <AdminPanel />;
       default:
         return <Dashboard stats={stats} setActiveTab={handleSwitchTab} questMode={questMode} />;
     }
   };
 
+  const isPlaygroundActive = activeTab !== 'dashboard' && activeTab !== 'interview';
+
   return (
     <div className="app-container">
+      <header className="app-header">
+        <div className="logo" onClick={() => handleSwitchTab('dashboard')}>
+          DS Visualizer<span className="logo-dot">.</span>
+        </div>
+        <nav className="header-nav">
+          <span 
+            className={`header-nav-link ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => handleSwitchTab('dashboard')}
+          >
+            Dashboard
+          </span>
+          <span 
+            className={`header-nav-link ${isPlaygroundActive ? 'active' : ''}`}
+            onClick={() => {
+              if (activeTab === 'dashboard' || activeTab === 'interview') {
+                handleSwitchTab('array');
+              }
+              setIsDrawerOpen(true);
+            }}
+          >
+            Playground
+          </span>
+          <span 
+            className={`header-nav-link ${activeTab === 'interview' ? 'active' : ''}`}
+            onClick={() => handleSwitchTab('interview')}
+          >
+            Interview Mode
+          </span>
+        </nav>
+        <button className="menu-toggle-btn" onClick={() => setIsDrawerOpen(true)}>
+          <span className="menu-bar"></span>
+          <span className="menu-bar"></span>
+          <span className="menu-bar"></span>
+        </button>
+      </header>
+
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={handleSwitchTab} 
@@ -88,7 +125,10 @@ function App() {
         setLanguageMode={setLanguageMode}
         questMode={questMode}
         setQuestMode={setQuestMode}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
       />
+      
       <main className="main-content">
         {renderContent()}
       </main>
