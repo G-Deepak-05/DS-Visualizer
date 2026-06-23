@@ -149,7 +149,7 @@ export const addXP = (amount: number, stats: UserStats, activityName: string, ty
 
 export const isTabLocked = (tab: ActiveTab, stats: UserStats, questMode: boolean): boolean => {
   if (!questMode) return false;
-  if (tab === 'dashboard' || tab === 'admin') return false;
+  if (tab === 'dashboard') return false;
   if (stats.level >= 4) return false;
   
   if (stats.level === 3) {

@@ -41,14 +41,14 @@ const QuestChapter: React.FC<{
         width: '40px',
         height: '40px',
         borderRadius: '50%',
-        background: isLocked ? 'var(--bg-tertiary)' : isCurrent ? 'var(--accent-indigo)' : 'var(--accent-emerald)',
-        border: '3px solid var(--bg-primary)',
-        boxShadow: isCurrent ? '0 0 15px var(--accent-indigo)' : 'none',
+        background: isLocked ? 'var(--bg-tertiary)' : isCurrent ? 'var(--accent-pink)' : 'var(--accent-emerald)',
+        border: '2px solid var(--text-primary)',
+        boxShadow: isCurrent ? '2px 2px 0px var(--text-primary)' : 'none',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontWeight: 700,
-        color: '#fff',
+        color: isLocked ? 'var(--text-muted)' : '#fff',
         fontSize: '16px',
         transition: 'all 0.3s ease',
         flexShrink: 0
@@ -86,15 +86,16 @@ const QuestChapter: React.FC<{
                   display: 'flex', 
                   gap: '12px', 
                   alignItems: 'flex-start',
-                  border: isCurrent && !topicLocked ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
-                  boxShadow: isCurrent && !topicLocked ? '0 0 10px rgba(99, 102, 241, 0.1)' : 'none'
+                  border: isCurrent && !topicLocked ? '2px solid var(--accent-pink)' : '1.5px solid var(--text-primary)',
+                  boxShadow: isCurrent && !topicLocked ? '3px 3px 0px var(--text-primary)' : '2px 2px 0px rgba(44, 51, 48, 0.1)'
                 }}
               >
                 <div style={{
                   padding: '8px',
                   borderRadius: '8px',
                   background: 'var(--bg-tertiary)',
-                  color: topicLocked ? 'var(--text-muted)' : 'var(--accent-cyan)'
+                  border: '1.5px solid var(--text-primary)',
+                  color: topicLocked ? 'var(--text-muted)' : 'var(--accent-pink)'
                 }}>
                   {t.icon}
                 </div>
@@ -135,28 +136,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
     <div style={{ animation: 'fadeIn 0.5s ease' }}>
       {/* Welcome Banner */}
       <div className="glass-panel" style={{
-        background: 'linear-gradient(135deg, rgba(25, 32, 53, 0.6), rgba(8, 11, 17, 0.8))',
+        background: 'var(--bg-secondary)',
         marginBottom: '32px',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: '-20%',
-          right: '-10%',
-          width: '300px',
-          height: '300px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)',
-          zIndex: 0,
-          pointerEvents: 'none'
-        }} />
         
         <div style={{ position: 'relative', zIndex: 1 }}>
           <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '8px' }}>
-            Welcome Back, <span className="text-gradient-indigo-purple">Developer</span>!
+            Welcome Back<span style={{ color: 'var(--accent-pink)' }}>.</span>
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '16px', maxWidth: '600px', lineHeight: '1.5' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '16px', maxWidth: '600px', lineHeight: '1.5', fontWeight: 500 }}>
             Accelerate your data structures and algorithms preparation. Build structures, inspect step-by-step memory updates, and unlock achievements.
           </p>
         </div>
@@ -169,24 +159,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
           <div className="xp-circle" style={{ '--progress': `${progressPercent}%` } as any}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '24px', fontWeight: 700 }}>{stats.level}</div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Level</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Level</div>
             </div>
           </div>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '4px' }}>XP Progress</h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              You earned <strong style={{ color: 'var(--accent-cyan)' }}>{stats.xp} XP</strong> in total. Get {300 - currentLevelProgress} XP more to reach Level {stats.level + 1}!
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>XP Progress</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 500 }}>
+              You earned <strong style={{ color: 'var(--accent-pink)' }}>{stats.xp} XP</strong> in total. Get {300 - currentLevelProgress} XP more to reach Level {stats.level + 1}!
             </p>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <Zap size={14} style={{ color: 'var(--accent-amber)' }} />
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Level cap resets every 300 XP</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Level cap resets every 300 XP</span>
             </div>
           </div>
         </div>
 
         {/* Badges Overview */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Trophy style={{ color: 'var(--accent-amber)' }} size={20} /> Unlocked Badges ({stats.unlockedBadges.length} / {ALL_BADGES.length})
           </h3>
           <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
@@ -211,12 +201,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
                     height: '46px',
                     borderRadius: '50%',
                     background: 'var(--bg-tertiary)',
-                    border: `2px solid ${badge.color}`,
+                    border: `2px solid var(--text-primary)`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginBottom: '6px',
-                    boxShadow: isUnlocked ? `0 0 10px ${badge.color}40` : 'none'
                   }}>
                     <Trophy size={20} style={{ color: badge.color }} />
                   </div>
@@ -247,9 +236,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setActiveTab, quest
                 left: '43px',
                 bottom: '40px',
                 width: '2px',
-                background: 'linear-gradient(to bottom, var(--accent-indigo), var(--accent-cyan), var(--bg-tertiary))',
+                background: 'var(--accent-pink)',
                 zIndex: 0,
-                opacity: 0.4
+                opacity: 0.6
               }} />
 
               {/* Level 1 Chapter */}

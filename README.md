@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# DS Visualizer.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive web-based educational platform that helps developers, students, and job seekers visualize, trace, and understand data structures and algorithms in real time.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🎨 Visual Design & Aesthetic
 
-## React Compiler
+DS Visualizer is built using a **premium minimalist editorial design system** inspired by high-end architectural layouts:
+* **Background**: Soft sage-green textured plaster/grain overlay (`#9eb3a6`).
+* **Typography**: Rich geometric charcoal (`#2c3330`) for primary elements and copy.
+* **Accents**: Deep magenta/pink (`#d91b5c`) highlights indicating active modes and primary navigation dots.
+* **Layout**: A clean sticky top header bar with horizontal page navigation and a toggleable slide-out right drawer panel for topic selection, maximizing visualization workspace.
+* **Cards & Nodes**: Flat elements with crisp borders and offset shadows rather than heavy tech-glowing neon panels.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## ⚡ Key Visualizers & Sandboxes
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+The platform provides complete playgrounds to inspect operations step-by-step:
+* **Arrays & Vectors**: Contiguous memory cells showing active index maps, linear searches, insertions, and index-shifting animations.
+* **Linked Lists**: Visual SVG nodes tracing node references and pointer linkages (Singly, Doubly, and Circular lists).
+* **Stacks**: LIFO limits beaker container featuring animated gravity pushes and popped rises.
+* **Queues**: FIFO pipelines with Simple, Deque (double-ended), Priority queues, and Circular queue rotating rings.
+* **Trees**: Hierarchical nodes simulating BST structures, traversals, and AVL self-balancing rotations.
+* **Heaps**: Complete tree mappings synchronized in real time with array indices, heapify steps, and bubble-up/down swaps.
+* **Hash Tables**: Collision resolution using Chaining buckets, Linear probing, and Quadratic probing equations.
+* **Graphs**: Draggable node canvas for pathfinding traversals (BFS, DFS, Dijkstra, Prim, Kruskal) on custom graph topologies.
+* **Sorting & Searching**: Vertical column heights animating Selection, Insertion, Bubble, Merge, and Quick Sort algorithms, alongside Binary Search.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🎒 Beginner-Friendly & Accessibility Features
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+To make DSA concepts accessible to absolute beginners, non-technical users, and auditory learners, five core modules are integrated:
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. **Analogy Mode**: Toggles complex terminology (e.g. pointers, balance factors, collision probing) into real-world analogies (e.g. treasure hunts, plates stack, highway maps, post office boxes).
+2. **Web Speech Synthesis Narrator**: Speaks granular step explanations out loud using native browser text-to-speech.
+3. **No-Code Blocks Editor**: Appends syntactically correct code blocks with parameter inputs via clicks, preventing syntax errors in the editor.
+4. **Visual Speedometers & Invariant Gauges**: Displays active hops, comparison counts, and capacity load factor meters on visualizer canvas panels.
+5. **Quest Progression Map**: Locks advanced topics under a gamified path until users earn XP and level up from simpler structures (toggled via Quest Mode).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🛠️ Project Stack
+
+* **Framework**: React 18 / Vite 8
+* **Language**: TypeScript
+* **Styling**: Vanilla CSS custom variables (`src/index.css`)
+* **Icons**: Lucide React
+
+---
+
+## 🚀 Running Locally
+
+1. Clone the repository and navigate to the project directory:
+   ```bash
+   cd DS-Visualizer
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run the Vite development server:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:5173/](http://localhost:5173/) in your web browser.
+
+4. Build production chunks:
+   ```bash
+   npm run build
+   ```

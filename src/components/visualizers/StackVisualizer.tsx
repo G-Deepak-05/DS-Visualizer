@@ -286,8 +286,7 @@ export const StackVisualizer: React.FC<StackVisualizerProps> = ({ languageMode, 
                         style={{
                           width: '80px',
                           height: '42px',
-                          borderRadius: '6px',
-                          background: 'linear-gradient(135deg, var(--bg-tertiary), rgba(30, 41, 59, 0.8))'
+                          borderRadius: '6px'
                         }}
                       >
                         {val}
