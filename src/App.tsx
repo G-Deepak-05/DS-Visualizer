@@ -29,10 +29,15 @@ function App() {
   const [questMode, setQuestMode] = useState<boolean>(false);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load stats from localStorage on mount
+  // Load stats from localStorage on mount & trigger deliberate 500ms loading delay
   useEffect(() => {
     setStats(loadStats());
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAddXP = (amount: number, name: string, type: 'visualization' | 'challenge' | 'quiz' = 'visualization') => {
@@ -78,6 +83,21 @@ function App() {
   };
 
   const isPlaygroundActive = activeTab !== 'dashboard' && activeTab !== 'interview';
+
+  if (isLoading) {
+    return (
+      <div className="loader-container">
+        <div className="loader-content">
+          <div className="loader-logo">
+            DS Visualizer<span className="logo-dot">.</span>
+          </div>
+          <div className="loader-bar-track">
+            <div className="loader-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
